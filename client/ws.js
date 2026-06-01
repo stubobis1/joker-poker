@@ -86,7 +86,7 @@ export function handleMessage(msg) {
       const prevPhase = state.gameState?.phase;
       state.gameState = msg.state;
       if (state.gameState.phase === 'committing' && prevPhase !== 'committing') clearJokerFeed();
-      if (state.gameState.phase === 'committing') renderCommitScreen();
+      if (state.gameState.phase === 'committing') renderCommitScreen(prevPhase !== 'committing');
       else renderGame();
       break;
     }
@@ -97,7 +97,7 @@ export function handleMessage(msg) {
       state.myCommitted = msg.committed ?? [];
       state.jokerPlaying = null;
       console.log(`[ws] your_hand: phase=${state.gameState?.phase ?? 'none'}, jokers=${state.myJokers.length}, hole=${state.myHole.length}, committed=${state.myCommitted.length}`);
-      if (state.gameState?.phase === 'committing') renderCommitScreen();
+      if (state.gameState?.phase === 'committing') renderCommitScreen(true);
       else { renderMyCards(); renderJokerHand(); renderArmedJokers(); }
       break;
 

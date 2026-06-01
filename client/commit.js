@@ -3,8 +3,11 @@ import { showScreen } from './ui.js';
 import { send } from './ws.js';
 import { makeJokerCard } from './jokers.js';
 
-export function renderCommitScreen() {
+export function renderCommitScreen(isFirstEntry = false) {
   showScreen('screen-commit');
+
+  if (!isFirstEntry) return;
+
   state.selectedToArm.clear();
   updateCommitCount();
 
