@@ -77,10 +77,17 @@ describe('makeCard', () => {
   });
 
   test('suit rendered as img.suit-img with correct src', () => {
-    expect(makeCard('Ah').querySelector('img.suit-img').getAttribute('src')).toBe('dist/hearts.svg');
-    expect(makeCard('Kd').querySelector('img.suit-img').getAttribute('src')).toBe('dist/diamonds.svg');
-    expect(makeCard('2c').querySelector('img.suit-img').getAttribute('src')).toBe('dist/clubs.svg');
-    expect(makeCard('9s').querySelector('img.suit-img').getAttribute('src')).toBe('dist/spades.svg');
+    expect(makeCard('Ah').querySelector('img.suit-img').getAttribute('src')).toBe('dist/svg/suits/hearts.svg');
+    expect(makeCard('Kd').querySelector('img.suit-img').getAttribute('src')).toBe('dist/svg/suits/diamonds.svg');
+    expect(makeCard('2c').querySelector('img.suit-img').getAttribute('src')).toBe('dist/svg/suits/clubs.svg');
+    expect(makeCard('9s').querySelector('img.suit-img').getAttribute('src')).toBe('dist/svg/suits/spades.svg');
+  });
+
+  test('wild card shows wild-card.svg and wild class', () => {
+    const el = makeCard('Ah', true);
+    expect(el.classList.contains('wild')).toBe(true);
+    expect(el.querySelector('img.suit-img').getAttribute('src')).toBe('dist/svg/wild-card.svg');
+    expect(el.querySelector('img.suit-img').getAttribute('alt')).toBe('wild');
   });
 
   test('suit img alt text is unicode symbol', () => {

@@ -20,7 +20,7 @@ document.getElementById('btn-copy-code').addEventListener('click', () =>
 document.getElementById('btn-copy-link').addEventListener('click', () =>
   navigator.clipboard?.writeText(window.location.href).catch(() => {}));
 
-for (const id of ['setting-bb', 'setting-chips', 'setting-starting-jokers', 'setting-jokers-per-round', 'setting-max-jokers', 'setting-max-per-round']) {
+for (const id of ['setting-bb', 'setting-chips', 'setting-starting-jokers', 'setting-jokers-per-round', 'setting-max-jokers', 'setting-max-per-round', 'setting-blind-double-rounds']) {
   document.getElementById(id).addEventListener('input', onSettingChange);
 }
 document.getElementById('setting-late-join').addEventListener('change', onSettingChange);
@@ -34,9 +34,10 @@ function onSettingChange() {
       startingChips:     parseInt(document.getElementById('setting-chips').value),
       startingJokers:    parseInt(document.getElementById('setting-starting-jokers').value),
       jokersPerRound:    parseInt(document.getElementById('setting-jokers-per-round').value),
-      maxJokers:         parseInt(document.getElementById('setting-max-jokers').value),
-      maxJokersPerRound: parseInt(document.getElementById('setting-max-per-round').value),
-      allowLateJoin:     document.getElementById('setting-late-join').checked,
+      maxJokers:          parseInt(document.getElementById('setting-max-jokers').value),
+      maxJokersPerRound:  parseInt(document.getElementById('setting-max-per-round').value),
+      blindDoubleRounds:  parseInt(document.getElementById('setting-blind-double-rounds').value),
+      allowLateJoin:      document.getElementById('setting-late-join').checked,
     });
   }, 400);
 }
@@ -59,8 +60,9 @@ export function renderWaitingRoom(msg) {
       'setting-chips':            settings.startingChips,
       'setting-starting-jokers':  settings.startingJokers   ?? 3,
       'setting-jokers-per-round': settings.jokersPerRound   ?? 1,
-      'setting-max-jokers':       settings.maxJokers        ?? 3,
-      'setting-max-per-round':    settings.maxJokersPerRound ?? 3,
+      'setting-max-jokers':             settings.maxJokers          ?? 3,
+      'setting-max-per-round':          settings.maxJokersPerRound  ?? 3,
+      'setting-blind-double-rounds':    settings.blindDoubleRounds  ?? 4,
     };
     for (const [id, val] of Object.entries(ids)) {
       const el = document.getElementById(id);
@@ -74,8 +76,10 @@ export function renderWaitingRoom(msg) {
     document.getElementById('display-starting-jokers').textContent = settings.startingJokers    ?? 3;
     document.getElementById('display-jokers-per-round').textContent = settings.jokersPerRound   ?? 1;
     document.getElementById('display-max-jokers').textContent      = settings.maxJokers         ?? 3;
-    document.getElementById('display-max-per-round').textContent   = settings.maxJokersPerRound ?? 3;
-    document.getElementById('display-late-join').textContent       = (settings.allowLateJoin ?? false) ? 'On' : 'Off';
+    document.getElementById('display-max-per-round').textContent        = settings.maxJokersPerRound  ?? 3;
+    const bdr = settings.blindDoubleRounds ?? 4;
+    document.getElementById('display-blind-double-rounds').textContent  = bdr === 0 ? 'Off' : bdr;
+    document.getElementById('display-late-join').textContent            = (settings.allowLateJoin ?? false) ? 'On' : 'Off';
   }
 
   const total  = players.length;

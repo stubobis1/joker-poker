@@ -14,13 +14,23 @@
       <h1 class="logo">🃏 Joker Poker</h1>
       <div class="card-box">
         <label>Your Name</label>
-        <input id="input-name" type="text" maxlength="20" placeholder="Enter name" autocomplete="off" />
+        <input id="input-name" type="text" maxlength="20" placeholder="Enter name" autocomplete="off" data-form-type="other" data-lpignore="true" />
         <label>Lobby Code <span class="hint">(leave blank to create)</span></label>
         <input id="input-code" type="text" maxlength="6" placeholder="XXXXXX" autocomplete="off"
                style="text-transform:uppercase;letter-spacing:0.2em" />
         <button id="btn-join" class="btn-primary">Join / Create</button>
         <div id="lobby-error" class="error hidden"></div>
       </div>
+
+      <details id="server-box" class="server-box">
+        <summary class="server-box-title">Server</summary>
+        <div class="server-box-body">
+          <label for="input-server-url">WebSocket URL</label>
+          <input id="input-server-url" type="text" placeholder="ws://localhost:3777" autocomplete="off" data-lpignore="true" />
+          <button id="btn-save-server" class="btn-secondary btn-save-server">Save</button>
+          <div id="server-save-msg" class="server-save-msg hidden"></div>
+        </div>
+      </details>
     </div>
   </div>
 
@@ -62,6 +72,10 @@
           <input id="setting-max-per-round" type="number" min="0" max="10" step="1" value="3" />
         </div>
         <div class="settings-row">
+          <label>Blind Double Every (rounds)</label>
+          <input id="setting-blind-double-rounds" type="number" min="0" max="50" step="1" value="4" title="0 = never double" />
+        </div>
+        <div class="settings-row">
           <label>Allow Late Join</label>
           <input id="setting-late-join" type="checkbox" />
         </div>
@@ -78,6 +92,7 @@
           Per Round: <span id="display-jokers-per-round">1</span> &nbsp;|&nbsp;
           Max Held: <span id="display-max-jokers">3</span> &nbsp;|&nbsp;
           Max Armed: <span id="display-max-per-round">3</span> &nbsp;|&nbsp;
+          Blind Doubles: every <span id="display-blind-double-rounds">4</span> rounds &nbsp;|&nbsp;
           Late Join: <span id="display-late-join">Off</span>
         </p>
       </div>
@@ -100,6 +115,7 @@
       <div id="commit-joker-list" class="joker-list"></div>
       <button id="btn-commit" class="btn-primary">Commit (<span id="commit-count">0</span> armed)</button>
       <div id="commit-timer-bar" class="timer-bar"><div id="commit-timer-fill" class="timer-fill"></div></div>
+      <div id="commit-players" class="commit-players"></div>
       <p id="commit-waiting" class="status-text hidden"></p>
     </div>
   </div>
@@ -122,6 +138,8 @@
         <div id="pot-display" class="pot-display"></div>
         <div id="community-cards" class="card-row"></div>
         <div id="phase-label" class="phase-label"></div>
+        <div id="blind-double-counter" class="blind-double-counter hidden"></div>
+        <div id="deck-counter" class="deck-counter hidden"></div>
       </div>
 
       <!-- My hole cards -->
@@ -129,19 +147,22 @@
         <div id="hole-cards" class="card-row"></div>
       </div>
 
-      <!-- Joker hand (always visible during game) -->
-      <div id="joker-hand-area" class="joker-hand-area hidden">
-        <div id="joker-hand-list" class="joker-hand-list"></div>
-      </div>
+      <!-- Joker areas: reserved left, armed right -->
+      <div class="joker-row">
+        <div id="joker-hand-area" class="joker-hand-area hidden">
+          <div class="joker-hand-label">Reserved Jokers</div>
+          <div id="joker-hand-list" class="joker-hand-list"></div>
+        </div>
 
-      <!-- Armed jokers (always visible during hand when player has committed jokers) -->
-      <div id="armed-jokers-area" class="armed-jokers-area hidden">
-        <div class="armed-jokers-label">Armed Jokers</div>
-        <div id="armed-jokers-list" class="joker-hand-list"></div>
+        <div id="armed-jokers-area" class="armed-jokers-area hidden">
+          <div class="armed-jokers-label">Armed Jokers</div>
+          <div id="armed-jokers-list" class="joker-hand-list"></div>
+        </div>
       </div>
 
       <!-- Action controls -->
       <div id="action-area" class="action-area hidden">
+        <div id="player-chip-label" class="player-chip-label"></div>
         <div class="action-info">
           <span id="action-bet-to-call"></span>
         </div>

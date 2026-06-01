@@ -133,7 +133,7 @@ describe('game_state message - joker feed lifecycle', () => {
     expect(clearJokerFeed).not.toHaveBeenCalled();
   });
 
-  test('clearJokerFeed not called on preflop→flop transition', () => {
+  test('clearJokerFeed not called on preflop->flop transition', () => {
     state.gameState = { phase: 'preflop' };
     handleMessage({ type: 'game_state', state: { phase: 'flop', players: [], actionIdx: -1 } });
     expect(clearJokerFeed).not.toHaveBeenCalled();

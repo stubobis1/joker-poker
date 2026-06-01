@@ -18,18 +18,39 @@ export function renderGame() {
 }
 
 const renderPot = () => {
-  const pot = state.gameState.pot ?? 0;
+  const gs  = state.gameState;
+  const pot = gs.pot ?? 0;
   document.getElementById('pot-display').textContent = pot > 0 ? `Pot: ${pot}` : '';
-  document.getElementById('phase-label').textContent = state.gameState.phase ?? '';
+  document.getElementById('phase-label').textContent = gs.phase ?? '';
+
+  const counterEl = document.getElementById('blind-double-counter');
+  const handsUntil = gs.handsUntilBlindDouble ?? null;
+  if (handsUntil != null) {
+    counterEl.textContent = `Rounds until blinds double: ${handsUntil}`;
+    counterEl.classList.remove('hidden');
+  } else {
+    counterEl.classList.add('hidden');
+  }
+
+  const deckEl    = document.getElementById('deck-counter');
+  const deckCount = gs.deckCount ?? null;
+  const deckTotal = gs.deckTotal ?? null;
+  if (deckCount != null && deckTotal != null && gs.phase !== 'waiting') {
+    deckEl.textContent = `Deck: ${deckCount} / ${deckTotal}`;
+    deckEl.classList.remove('hidden');
+  } else {
+    deckEl.classList.add('hidden');
+  }
 };
 
 const renderCommunity = () => {
   const el    = document.getElementById('community-cards');
   const cards = state.gameState.community ?? [];
+  const wilds = new Set(state.gameState.wilds ?? []);
   el.innerHTML = '';
   for (let i = 0; i < 5; i++) {
     if (cards[i]) {
-      el.appendChild(makeCard(cards[i]));
+      el.appendChild(makeCard(cards[i], wilds.has(cards[i])));
     } else {
       const ph = document.createElement('div');
       ph.className = 'card-placeholder';
@@ -91,15 +112,25 @@ function makeOpponentSeat(p) {
 
   const cardRow    = document.createElement('div');
   cardRow.className = 'opponent-cards';
-  const cardCount  = p.holeCards?.length > 0 ? p.holeCards.length : (p.sittingOut ? 0 : 2);
+  const wilds      = new Set(state.gameState.wilds ?? []);
+  const revealed   = state.revealedOpponents.find(r => r.token === p.token);
+  const showCards  = state.gameState.phase === 'showdown' || !!revealed;
+  const cardCount  = p.holeCards?.length > 0 ? p.holeCards.length : (p.sittingOut ? 0 : (p.holeCardCount ?? 2));
   for (let i = 0; i < cardCount; i++) {
-    const c = document.createElement('div');
-    if (p.holeCards?.[i] && state.gameState.phase === 'showdown') {
-      cardRow.appendChild(makeSmCard(p.holeCards[i]));
+    const knownCards = (p.holeCards?.length ? p.holeCards : revealed?.cards) ?? [];
+    if (knownCards[i] && showCards) {
+      cardRow.appendChild(makeSmCard(knownCards[i], wilds.has(knownCards[i])));
     } else {
+      const c = document.createElement('div');
       c.className = 'card-sm';
       cardRow.appendChild(c);
     }
+  }
+  if (revealed && state.gameState.phase !== 'showdown') {
+    const badge = document.createElement('div');
+    badge.className   = 'tell-badge';
+    badge.textContent = 'TELL';
+    seat.appendChild(badge);
   }
   seat.appendChild(cardRow);
   return seat;
@@ -108,16 +139,17 @@ function makeOpponentSeat(p) {
 export function renderMyCards() {
   const el    = document.getElementById('hole-cards');
   const cards = state.myHole;
+  const wilds = new Set(state.gameState?.wilds ?? []);
   el.innerHTML = '';
 
   if (!cards || cards.length === 0) {
     const me = (state.gameState?.players ?? []).find(p => p.token === state.myToken);
     if (me?.holeCards?.length) {
-      me.holeCards.forEach(c => el.appendChild(makeCard(c)));
+      me.holeCards.forEach(c => el.appendChild(makeCard(c, wilds.has(c))));
       return;
     }
   }
-  cards.forEach(c => el.appendChild(makeCard(c)));
+  cards.forEach(c => el.appendChild(makeCard(c, wilds.has(c))));
 }
 
 function renderActionArea() {
@@ -131,6 +163,8 @@ function renderActionArea() {
   }
 
   area.classList.remove('hidden');
+
+  document.getElementById('player-chip-label').textContent = `${me.name} - $${me.chips ?? 0}`;
 
   const isMyTurn = state.gameState.actionIdx !== -1 &&
     state.gameState.players[state.gameState.actionIdx]?.token === state.myToken;
@@ -193,8 +227,11 @@ export function renderGameOver(msg) {
   const sorted = (msg.players ?? []).sort((a, b) => b.chips - a.chips);
   const winner = sorted[0];
   const standings = sorted.map((p, i) => `${i + 1}. ${p.name} - $${p.chips}`).join('<br>');
+  const headline = msg.isDraw
+    ? 'Draw - the deck ran out!'
+    : `${winner?.name ?? 'Someone'} wins!`;
   banner.innerHTML =
-    `<div class="game-over-winner">${winner?.name ?? 'Someone'} wins!</div>` +
+    `<div class="game-over-winner">${headline}</div>` +
     `<div class="game-over-standings">${standings}</div>` +
     `<button id="btn-play-again" class="btn-primary game-over-btn">Play Again</button>`;
   document.getElementById('action-area').classList.add('hidden');

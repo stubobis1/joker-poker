@@ -1,4 +1,4 @@
-# Joker Poker — Game Design & Technical Plan
+# Joker Poker - Game Design & Technical Plan
 
 ## Overview
 
@@ -41,20 +41,20 @@ Some jokers may add or remove cards from the deck or from a player's hole cards.
 
 ### Side Pots
 - Full side pot implementation
-- Player can't post BB at hand start → spectator (no mid-hand bust edge case from blinds)
-- All-in mid-hand → main pot capped at their contribution × eligible players; excess forms side pot
-- Multiple all-ins → multiple side pots, each with correct eligibility
+- Player can't post BB at hand start -> spectator (no mid-hand bust edge case from blinds)
+- All-in mid-hand -> main pot capped at their contribution × eligible players; excess forms side pot
+- Multiple all-ins -> multiple side pots, each with correct eligibility
 - Server tracks: `pots: [{ amount, eligible_players[] }]`; resolved smallest-to-largest at showdown
 
 ### Jokers
 - Each player carries a joker hand between hands (cap: 3); earn +1 at start of each new hand
-- **Commit phase:** Before hole cards are dealt, each player selects which jokers (0–N) to arm. **Locked — no changes after deal.** Committed jokers placed face-down; opponents see count but not type.
-- **Arming costs the joker** — committed jokers are spent regardless of whether you activate them. Bluffing with a joker is a real sacrifice.
+- **Commit phase:** Before hole cards are dealt, each player selects which jokers (0–N) to arm. **Locked - no changes after deal.** Committed jokers placed face-down; opponents see count but not type.
+- **Arming costs the joker** - committed jokers are spent regardless of whether you activate them. Bluffing with a joker is a real sacrifice.
 - **Play:** Any time you have action, flip a committed joker face-up and activate its effect
 - At end of hand, each player draws 1 new joker (replacing spent/committed ones), up to cap of 3
 - Uncommitted jokers stay in hand untouched
 - Some jokers specify a restricted window (e.g., "pre-flop only", "before showdown")
-- No interrupts — jokers only play on your own action turn
+- No interrupts - jokers only play on your own action turn
 
 ### Commit Phase Bluffing
 Committing a joker face-down without playing it is legal. Opponents see you armed a joker and must guess whether you'll use it. Creates psychological pressure even without spending a joker.
@@ -130,7 +130,7 @@ Game Loop
     └── Commit phase: players select jokers to arm (face-down, visible count only)
     └── Blinds posted
     └── Hole cards dealt
-    └── Betting streets: Pre-Flop → Flop → Turn → River
+    └── Betting streets: Pre-Flop -> Flop -> Turn -> River
         └── Each action: check / call / raise / fold / [flip + activate committed joker]
     └── Showdown or last-player-standing
     └── Chips awarded
@@ -142,7 +142,7 @@ Game End (session)
     └── One player has all chips (or host ends game)
     └── Final standings shown
     └── Busted players become spectators; all players reset to starting chips for next game
-    └── Lobby persists — host can start new game with same group
+    └── Lobby persists - host can start new game with same group
 ```
 
 ---
@@ -150,16 +150,16 @@ Game End (session)
 ## Tech Stack
 
 ### Client: HTML/CSS/JS (Vanilla)
-- Vanilla JS + HTML/CSS — no framework, no build step
+- Vanilla JS + HTML/CSS - no framework, no build step
 - Hosted on **GitHub Pages** (static, repo `/docs` folder or `gh-pages` branch)
 - Native browser `WebSocket` API connects to game server over WSS
 - Mobile-first UI: **portrait**
-- Single-page app — lobby entry, game table, results all in one page
+- Single-page app - lobby entry, game table, results all in one page
 - `localStorage` for `playerToken` persistence
 
 ### Server: Node.js WebSocket Server
 - Node.js + `ws` library (lightweight, no Socket.io overhead)
-- **Dockerized** — single `Dockerfile`, deploy to GCP Cloud Run
+- **Dockerized** - single `Dockerfile`, deploy to GCP Cloud Run
 - All game logic server-authoritative; clients are dumb renderers
 - HTTP endpoints for lobby lifecycle; WebSocket for all real-time events
 
@@ -172,12 +172,12 @@ Game End (session)
 - First visit: generate UUID `playerToken`, store in `localStorage`
 - Display name entered per session, associated with token
 - Server stores per-token stats (hands played, wins, jokers used) in Redis/memory
-- Reconnect: same `playerToken` → server restores seat if hand still active
+- Reconnect: same `playerToken` -> server restores seat if hand still active
 
 ### Reconnect
-- Disconnect → 30s grace timer starts, other players notified
-- Reconnect within 30s with same `playerToken` → restore seat + state
-- Timeout → auto-fold; player becomes spectator; rejoins next game
+- Disconnect -> 30s grace timer starts, other players notified
+- Reconnect within 30s with same `playerToken` -> restore seat + state
+- Timeout -> auto-fold; player becomes spectator; rejoins next game
 
 ### Deployment
 - **Server:** GCP Cloud Run (Dockerized Node.js, free tier, `minInstances: 1` to avoid cold-start WS drops)
@@ -186,8 +186,8 @@ Game End (session)
 - CORS: server whitelist GitHub Pages origin
 
 ### Lobby System
-- `POST /lobby` → `{ code: "XYZ123" }` (host gets first WS connection)
-- `GET /lobby/:code` → `{ playerCount, maxPlayers, started }`
+- `POST /lobby` -> `{ code: "XYZ123" }` (host gets first WS connection)
+- `GET /lobby/:code` -> `{ playerCount, maxPlayers, started }`
 - WS: `wss://server/game/:code?name=PlayerName&token=UUID`
 - Server broadcasts to all connections in room keyed by code
 
@@ -195,7 +195,7 @@ Game End (session)
 
 ## Server Message Protocol
 
-### Client → Server
+### Client -> Server
 ```json
 { "type": "join",          "name": "string", "token": "uuid" }
 { "type": "ready" }
@@ -204,7 +204,7 @@ Game End (session)
 { "type": "play_joker",    "joker_id": "string", "target": "player_id|null" }
 ```
 
-### Server → All Clients (broadcast)
+### Server -> All Clients (broadcast)
 ```json
 { "type": "lobby_state",   "players": [...], "started": false }
 { "type": "game_state",    "state": { ...full } }
@@ -214,7 +214,7 @@ Game End (session)
 { "type": "player_left",   "player_id": "string", "timeout_in": 30 }
 ```
 
-### Server → Single Client (private)
+### Server -> Single Client (private)
 ```json
 { "type": "your_hand",     "cards": ["Ah","Kd"], "jokers": [{"id":"...","name":"..."}] }
 { "type": "your_token",    "token": "uuid" }
@@ -224,52 +224,52 @@ Game End (session)
 ### Sync Strategy
 - Full `game_state` sent on: join/reconnect, every 5 events, hand start
 - `event` deltas sent for everything in between
-- Client applies deltas; discards if sequence gap detected → request full sync
+- Client applies deltas; discards if sequence gap detected -> request full sync
 
-> **BB stacking:** Multiple Double Blind jokers multiply. 2 players each play it → 4× BB. No cap.
+> **BB stacking:** Multiple Double Blind jokers multiply. 2 players each play it -> 4× BB. No cap.
 
 ---
 
 ## Phases
 
-### Phase 1 — Core Poker
+### Phase 1 - Core Poker
 
 #### Server (complete)
 - [x] Node.js server scaffolded + Dockerized (`server/Dockerfile`, `docker-compose.yml`)
-- [x] Local dev: `docker compose watch` → server at `ws://localhost:3000`
-- [x] Lobby create/join — `POST /lobby`, `GET /lobby/:code`, WS `/game/:code`
+- [x] Local dev: `docker compose watch` -> server at `ws://localhost:3000`
+- [x] Lobby create/join - `POST /lobby`, `GET /lobby/:code`, WS `/game/:code`
 - [x] Standard Texas Hold'em game loop: deal, blinds, streets, showdown, chip transfer
 - [x] Side pot logic: `pots[]`, all-in detection, eligibility tracking, showdown resolution
-- [x] Hand evaluator: ranks 1–13 (High Card → Flush Five), best-N-of-M selection
+- [x] Hand evaluator: ranks 1–13 (High Card -> Flush Five), best-N-of-M selection
 - [x] Player identity: `playerToken` UUID over WS query param, reconnect restores seat
-- [x] 77 unit tests passing (`npm test`) — deck, eval, full game state machine
+- [x] 77 unit tests passing (`npm test`) - deck, eval, full game state machine
 - [ ] Cloud Run deploy + HTTPS/WSS (not yet deployed)
-- [ ] Reconnect: 30s grace timer + auto-fold (stub in socket.js — TODO)
-- [ ] Server stats store (hands played, wins — deferred to Phase 2)
+- [ ] Reconnect: 30s grace timer + auto-fold (stub in socket.js - TODO)
+- [ ] Server stats store (hands played, wins - deferred to Phase 2)
 
 #### Client (not started)
 - [ ] `/client` folder: `index.html`, `style.css`, `app.js`
-- [ ] Screens: lobby entry → waiting room → game table → results
+- [ ] Screens: lobby entry -> waiting room -> game table -> results
 - [ ] WS connection + message handling (`your_token`, `game_state`, `event`)
 - [ ] `localStorage` token persistence + reconnect on page reload
 - [ ] Portrait game table: community cards, player chips/bets, hole cards, action buttons
-- [ ] GitHub Pages deploy (push `/client` → `gh-pages` or `/docs`)
+- [ ] GitHub Pages deploy (push `/client` -> `gh-pages` or `/docs`)
 
-### Phase 2 — Joker System
+### Phase 2 - Joker System
 - [ ] Joker data model (id, name, effect, timing, rarity)
 - [ ] Joker distribution logic (draw pool, per-hand earn)
 - [ ] Client UI: joker hand display, play button
 - [ ] Server-side joker effect handlers
 - [ ] Start with 5-6 jokers across all categories
 
-### Phase 3 — Polish
+### Phase 3 - Polish
 - [ ] Lobby host config (joker pool selection, blinds, chip counts)
 - [ ] Animations (card flip, joker play effect)
 - [ ] Sound
 - [ ] Reconnect handling
 - [ ] Player disconnect handling (auto-fold or pause)
 
-### Phase 4 — Expand
+### Phase 4 - Expand
 - [ ] More jokers
 - [ ] Joker rarity tiers
 - [ ] Spectator mode
@@ -281,6 +281,6 @@ Game End (session)
 
 1. ~~Commit phase timing: locked before deal.~~ ✓
 2. ~~Commit bluff cost: arming spends the joker (played or not); draw 1 replacement at end of hand.~~ ✓
-3. **Joker-specific interactions:** Deferred — design individual jokers when Phase 2 begins.
+3. **Joker-specific interactions:** Deferred - design individual jokers when Phase 2 begins.
 4. ~~Mobile UI: portrait.~~ ✓
-5. ~~Chip floor: full side pots implemented. Bust threshold = stack < BB at hand start → spectator.~~ ✓
+5. ~~Chip floor: full side pots implemented. Bust threshold = stack < BB at hand start -> spectator.~~ ✓

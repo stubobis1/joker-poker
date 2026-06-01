@@ -1,5 +1,5 @@
 export const showScreen = id => {
-  console.log(`[ui] screen → ${id}`);
+  console.log(`[ui] screen -> ${id}`);
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.getElementById(id).classList.add('active');
 };

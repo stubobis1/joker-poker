@@ -6,6 +6,7 @@ export function makeJokerCard(j, isCommitted) {
   const card = document.createElement('div');
   card.className = `joker-card${isCommitted ? ' committed' : ''}`;
   card.innerHTML = `
+    ${j.icon ? `<img class="joker-icon" src="${j.icon}" alt="">` : ''}
     <div class="joker-name joker-rarity-${j.rarity ?? 'common'}">${j.name}</div>
     <div class="joker-cat">${j.category ?? ''}</div>
     <div class="joker-desc">${j.desc ?? ''}</div>
@@ -19,7 +20,7 @@ export function renderJokerHand() {
   const list = document.getElementById('joker-hand-list');
   list.innerHTML = '';
 
-  if (!state.myJokers.length && !state.myCommitted.length) {
+  if (!state.myJokers.length) {
     area.classList.add('hidden'); return;
   }
   area.classList.remove('hidden');
@@ -27,11 +28,6 @@ export function renderJokerHand() {
   state.myJokers.forEach(j => {
     const card = makeJokerCard(j, false);
     card.title = `${j.name}: ${j.desc}`;
-    list.appendChild(card);
-  });
-  state.myCommitted.forEach(j => {
-    const card = makeJokerCard(j, true);
-    card.title = `[ARMED] ${j.name}: ${j.desc}`;
     list.appendChild(card);
   });
 }

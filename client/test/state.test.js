@@ -30,6 +30,7 @@ describe('initial state', () => {
   test('lobbySettings defaults', () => {
     expect(state.lobbySettings.bb).toBe(50);
     expect(state.lobbySettings.startingChips).toBe(1000);
+    expect(state.lobbySettings.blindDoubleRounds).toBe(4);
   });
 });
 

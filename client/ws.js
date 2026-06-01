@@ -9,7 +9,7 @@ import { renderJokerHand, renderArmedJokers, showJokerReveal, addJokerFeedEntry,
 let ws = null;
 
 export const send = obj => {
-  console.log('[ws] send →', obj);
+  console.log('[ws] send ->', obj);
   if (ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(obj));
 };
 
@@ -31,8 +31,8 @@ export function connectWS(code, name) {
   ws.addEventListener('message', e => {
     let msg;
     try { msg = JSON.parse(e.data); } catch { return; }
-    if (msg.type !== 'game_state' && msg.type !== 'your_hand') console.log('[ws] recv ←', msg);
-    else console.log('[ws] recv ←', msg.type);
+    if (msg.type !== 'game_state' && msg.type !== 'your_hand') console.log('[ws] recv <-', msg);
+    else console.log('[ws] recv <-', msg.type);
     handleMessage(msg);
   });
 
@@ -92,12 +92,13 @@ export function handleMessage(msg) {
     }
 
     case 'your_hand':
-      state.myHole      = msg.holeCards ?? [];
-      state.myJokers    = msg.jokers    ?? [];
-      state.myCommitted = msg.committed ?? [];
+      state.myHole             = msg.holeCards        ?? [];
+      state.myJokers           = msg.jokers           ?? [];
+      state.myCommitted        = msg.committed        ?? [];
+      state.revealedOpponents  = msg.revealedOpponents ?? [];
       state.jokerPlaying = null;
       console.log(`[ws] your_hand: phase=${state.gameState?.phase ?? 'none'}, jokers=${state.myJokers.length}, hole=${state.myHole.length}, committed=${state.myCommitted.length}`);
-      if (state.gameState?.phase === 'committing') renderCommitScreen(true);
+      if (state.gameState?.phase === 'committing') renderCommitScreen(false);
       else { renderMyCards(); renderJokerHand(); renderArmedJokers(); }
       break;
 
