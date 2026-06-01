@@ -3,17 +3,20 @@ const SERVER_HTTP = 'http://localhost:3000';
 const SERVER_WS   = 'ws://localhost:3000';
 
 // ---- State ----
-let ws            = null;
-let myToken       = localStorage.getItem('playerToken') || null;
-let lobbyCode     = null;
-let myName        = '';
-let gameState     = null;   // last full game_state from server
-let myHole        = [];     // private hole cards
-let myJokers      = [];     // available jokers (from your_hand)
-let myCommitted   = [];     // committed jokers (from your_hand)
-let selectedToArm = new Set(); // joker ids selected in commit phase
-let pendingJoker  = null;   // { id } waiting for target selection
-let commitDeadline = null;  // Date for countdown timer
+let ws             = null;
+let myToken        = localStorage.getItem('playerToken') || null;
+let lobbyCode      = null;
+let myName         = '';
+let lobbyHostToken = null;  // token of lobby host
+let lobbySettings  = { bb: 50, startingChips: 1000 };
+let isReady        = false;
+let gameState      = null;  // last full game_state from server
+let myHole         = [];    // private hole cards
+let myJokers       = [];    // available jokers (from your_hand)
+let myCommitted    = [];    // committed jokers (from your_hand)
+let selectedToArm  = new Set();
+let pendingJoker   = null;
+let commitDeadline = null;
 
 // ---- Screens ----
 function showScreen(id) {
@@ -22,6 +25,14 @@ function showScreen(id) {
 }
 
 // ---- Lobby Screen ----
+
+// Pre-fill code from URL ?code=XXXXXX
+(function prefillFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const urlCode = params.get('code');
+  if (urlCode) document.getElementById('input-code').value = urlCode.toUpperCase();
+})();
+
 document.getElementById('btn-join').addEventListener('click', onJoinClick);
 document.getElementById('input-code').addEventListener('input', e => {
   e.target.value = e.target.value.toUpperCase();
@@ -50,6 +61,11 @@ async function onJoinClick() {
     }
   }
 
+  // Update URL so the invite link works
+  const newUrl = new URL(window.location.href);
+  newUrl.searchParams.set('code', targetCode);
+  history.replaceState({}, '', newUrl);
+
   connectWS(targetCode, name);
 }
 
@@ -66,7 +82,6 @@ function connectWS(code, name) {
   ws = new WebSocket(url);
 
   ws.addEventListener('open', () => {
-    // Transition to waiting room immediately
     document.getElementById('waiting-code').textContent = code;
     showScreen('screen-waiting');
   });
@@ -100,7 +115,21 @@ function handleMessage(msg) {
       break;
 
     case 'lobby_state':
+      lobbyHostToken = msg.hostToken ?? null;
+      if (msg.settings) lobbySettings = msg.settings;
       renderWaitingRoom(msg);
+      break;
+
+    case 'you_are_host':
+      lobbyHostToken = myToken;
+      renderWaitingRoom({ players: [], hostToken: myToken, settings: lobbySettings, started: false });
+      break;
+
+    case 'kicked':
+      lobbyCode = null;
+      ws?.close();
+      showScreen('screen-lobby');
+      showError(document.getElementById('lobby-error'), 'You were removed from the lobby by the host.');
       break;
 
     case 'game_state':
@@ -148,35 +177,102 @@ function handleEvent(msg) {
 }
 
 // ---- Waiting Room ----
+
 document.getElementById('btn-ready').addEventListener('click', () => {
+  isReady = !isReady;
   send({ type: 'ready' });
-  document.getElementById('btn-ready').disabled = true;
-  document.getElementById('waiting-status').textContent = 'Waiting for others…';
+  const btn = document.getElementById('btn-ready');
+  btn.textContent = isReady ? 'Not Ready' : 'Ready';
+  btn.classList.toggle('is-ready', isReady);
+});
+
+document.getElementById('btn-start').addEventListener('click', () => {
+  send({ type: 'start_game' });
 });
 
 document.getElementById('btn-copy-code').addEventListener('click', () => {
   navigator.clipboard?.writeText(lobbyCode).catch(() => {});
 });
 
+document.getElementById('btn-copy-link').addEventListener('click', () => {
+  navigator.clipboard?.writeText(window.location.href).catch(() => {});
+});
+
+let settingsDebounce = null;
+function onSettingChange() {
+  clearTimeout(settingsDebounce);
+  settingsDebounce = setTimeout(() => {
+    const bb    = document.getElementById('setting-bb').value;
+    const chips = document.getElementById('setting-chips').value;
+    send({ type: 'update_settings', bb: parseInt(bb), startingChips: parseInt(chips) });
+  }, 400);
+}
+document.getElementById('setting-bb').addEventListener('input', onSettingChange);
+document.getElementById('setting-chips').addEventListener('input', onSettingChange);
+
 function renderWaitingRoom(msg) {
+  showScreen('screen-waiting');
+  document.getElementById('waiting-code').textContent = lobbyCode ?? '';
+
+  const players  = msg.players ?? [];
+  const amHost   = (msg.hostToken ?? lobbyHostToken) === myToken;
+  const settings = msg.settings ?? lobbySettings;
+
+  document.getElementById('host-settings').classList.toggle('hidden', !amHost);
+  document.getElementById('guest-settings').classList.toggle('hidden', amHost);
+
+  if (amHost) {
+    const bbEl    = document.getElementById('setting-bb');
+    const chipsEl = document.getElementById('setting-chips');
+    if (document.activeElement !== bbEl)    bbEl.value    = settings.bb;
+    if (document.activeElement !== chipsEl) chipsEl.value = settings.startingChips;
+  } else {
+    document.getElementById('display-bb').textContent    = settings.bb;
+    document.getElementById('display-chips').textContent = settings.startingChips;
+  }
+
+  document.getElementById('btn-start').classList.toggle('hidden', !amHost);
+
   const list = document.getElementById('player-list');
   list.innerHTML = '';
-  const players = msg.players ?? [];
   for (const p of players) {
-    const li = document.createElement('li');
+    const li  = document.createElement('li');
     const dot = document.createElement('span');
     dot.className = `ready-dot ${p.ready ? 'player-ready' : 'player-waiting'}`;
     li.appendChild(dot);
+
     const nameSpan = document.createElement('span');
-    nameSpan.textContent = p.name + (p.ready ? ' ✓' : '');
     nameSpan.className = p.ready ? 'player-ready' : '';
+    nameSpan.textContent = p.name;
+    if (p.token === (msg.hostToken ?? lobbyHostToken)) {
+      const badge = document.createElement('span');
+      badge.className = 'host-badge';
+      badge.textContent = 'HOST';
+      nameSpan.appendChild(document.createTextNode(' '));
+      nameSpan.appendChild(badge);
+    }
     li.appendChild(nameSpan);
+
+    if (amHost && p.token !== myToken) {
+      const kickBtn = document.createElement('button');
+      kickBtn.className = 'kick-btn';
+      kickBtn.textContent = '✕';
+      kickBtn.title = `Kick ${p.name}`;
+      kickBtn.addEventListener('click', () => send({ type: 'kick_player', target_token: p.token }));
+      li.appendChild(kickBtn);
+    }
+
     list.appendChild(li);
   }
-  const total = players.length;
-  const ready = players.filter(p => p.ready).length;
-  document.getElementById('waiting-status').textContent =
-    total < 2 ? 'Need at least 2 players.' : `${ready} / ${total} ready`;
+
+  const total  = players.length;
+  const ready  = players.filter(p => p.ready).length;
+  const status = total < 2
+    ? 'Need at least 2 players.'
+    : amHost
+      ? `${ready} / ${total} ready — click Start Game when ready.`
+      : `${ready} / ${total} ready — waiting for host to start.`;
+  document.getElementById('waiting-status').textContent = status;
 }
 
 // ---- Game Rendering ----

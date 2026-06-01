@@ -30,10 +30,34 @@
       <h2>Waiting Room</h2>
       <div class="code-display">
         Code: <span id="waiting-code"></span>
-        <button class="btn-copy" id="btn-copy-code" title="Copy">⎘</button>
+        <button class="btn-copy" id="btn-copy-code" title="Copy code">⎘ Code</button>
+        <button class="btn-copy" id="btn-copy-link" title="Copy invite link">⎘ Link</button>
       </div>
+
+      <!-- Host-only settings -->
+      <div id="host-settings" class="host-settings hidden">
+        <h3 class="settings-heading">Game Settings</h3>
+        <div class="settings-row">
+          <label>Big Blind</label>
+          <input id="setting-bb" type="number" min="2" max="10000" step="1" value="50" />
+        </div>
+        <div class="settings-row">
+          <label>Starting Chips</label>
+          <input id="setting-chips" type="number" min="100" max="100000" step="100" value="1000" />
+        </div>
+      </div>
+
+      <!-- Non-host settings (read-only) -->
+      <div id="guest-settings" class="guest-settings hidden">
+        <p class="status-text">BB: <span id="display-bb">50</span> &nbsp;|&nbsp; Chips: <span id="display-chips">1000</span></p>
+      </div>
+
       <ul id="player-list"></ul>
-      <button id="btn-ready" class="btn-primary">Ready</button>
+
+      <div class="waiting-actions">
+        <button id="btn-ready" class="btn-secondary">Ready</button>
+        <button id="btn-start" class="btn-primary hidden">Start Game</button>
+      </div>
       <p id="waiting-status" class="status-text"></p>
     </div>
   </div>
