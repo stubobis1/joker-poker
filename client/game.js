@@ -141,11 +141,11 @@ function renderActionArea() {
     document.getElementById('action-bet-to-call').textContent = '';
     status.classList.remove('hidden');
     if (me.sittingOut) {
-      status.textContent = 'Joined — playing next hand.';
+      status.textContent = 'Joined - playing next hand.';
     } else if (me.folded) {
       status.textContent = 'You folded.';
     } else if (me.allIn) {
-      status.textContent = 'All in — waiting for showdown.';
+      status.textContent = 'All in - waiting for showdown.';
     } else if (state.gameState.actionIdx === -1) {
       status.textContent = 'Waiting…';
     } else {
@@ -192,7 +192,7 @@ export function renderGameOver(msg) {
   banner.classList.remove('hidden');
   const sorted = (msg.players ?? []).sort((a, b) => b.chips - a.chips);
   const winner = sorted[0];
-  const standings = sorted.map((p, i) => `${i + 1}. ${p.name} — $${p.chips}`).join('<br>');
+  const standings = sorted.map((p, i) => `${i + 1}. ${p.name} - $${p.chips}`).join('<br>');
   banner.innerHTML =
     `<div class="game-over-winner">${winner?.name ?? 'Someone'} wins!</div>` +
     `<div class="game-over-standings">${standings}</div>` +

@@ -120,7 +120,7 @@ describe('error message', () => {
   });
 });
 
-describe('game_state message — joker feed lifecycle', () => {
+describe('game_state message - joker feed lifecycle', () => {
   test('clearJokerFeed called when transitioning into committing phase', () => {
     state.gameState = { phase: 'river' };
     handleMessage({ type: 'game_state', state: { phase: 'committing', players: [], actionIdx: -1 } });

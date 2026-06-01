@@ -1,4 +1,4 @@
-# Joker Poker — Client
+# Joker Poker - Client
 
 Browser client for Joker Poker: a Texas Hold'em variant where players collect and secretly arm special Joker cards each hand.
 
@@ -13,14 +13,14 @@ Browser client for Joker Poker: a Texas Hold'em variant where players collect an
 
 ### Jokers
 
-Each player holds a hand of Joker cards with unique effects. Before each hand, players secretly **arm** some of their jokers — opponents see how many are armed, not which ones. Armed jokers are spent whether played or not. Play a joker at the right moment to swing the hand.
+Each player holds a hand of Joker cards with unique effects. Before each hand, players secretly **arm** some of their jokers - opponents see how many are armed, not which ones. Armed jokers are spent whether played or not. Play a joker at the right moment to swing the hand.
 
 ## Running locally
 
 Requires the server running at `localhost:3777` (see [server/](../server/)).
 
 ```bash
-# No build step needed — open directly in a browser
+# No build step needed - open directly in a browser
 # Or serve with any static file server:
 npx serve .
 ```
@@ -40,7 +40,7 @@ npm run test:watch  # watch mode
 ```
 client/
   index.html      # entry point
-  app.js          # module entry — imports all screens
+  app.js          # module entry - imports all screens
   config.js       # server URL config (edit for production)
   state.js        # shared client state
   ws.js           # WebSocket connection + message handler

@@ -60,7 +60,7 @@ describe('makeCard', () => {
     expect(el.classList.contains('card')).toBe(true);
   });
 
-  test('no red class — suit color carried by SVG', () => {
+  test('no red class - suit color carried by SVG', () => {
     expect(makeCard('Ah').classList.contains('red')).toBe(false);
     expect(makeCard('Kd').classList.contains('red')).toBe(false);
     expect(makeCard('Ac').classList.contains('red')).toBe(false);

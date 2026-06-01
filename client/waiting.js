@@ -90,8 +90,8 @@ export function renderWaitingRoom(msg) {
   const status = total < 2
     ? 'Need at least 2 players.'
     : amHost
-      ? `${ready} / ${total} ready — click Start Game when ready.`
-      : `${ready} / ${total} ready — waiting for host to start.`;
+      ? `${ready} / ${total} ready - click Start Game when ready.`
+      : `${ready} / ${total} ready - waiting for host to start.`;
   document.getElementById('waiting-status').textContent = status;
 }
 
