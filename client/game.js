@@ -137,7 +137,7 @@ function renderActionArea() {
 
   if (!isMyTurn) {
     buttons.classList.add('invisible');
-    document.getElementById('play-joker-area').classList.add('hidden');
+    document.getElementById('play-joker-area')?.classList.add('hidden');
     document.getElementById('action-bet-to-call').textContent = '';
     status.classList.remove('hidden');
     if (me.sittingOut) {
