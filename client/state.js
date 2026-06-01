@@ -14,4 +14,5 @@ export const state = {
   pendingJoker:   null,
   jokerPlaying:   null,
   commitDeadline: null,
+  showdownFeedAdded: false,
 };

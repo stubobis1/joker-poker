@@ -161,9 +161,26 @@ export function addJokerFeedEntry(msg) {
   list.appendChild(entry);
 }
 
+export function addWinFeedEntry(awards, players) {
+  const feed = document.getElementById('joker-feed');
+  const list = document.getElementById('joker-feed-list');
+  if (!feed || !list) return;
+  feed.classList.remove('hidden');
+  awards.forEach(a => {
+    const names = a.tokens
+      .map(t => players.find(x => x.token === t)?.name ?? t)
+      .join(' & ');
+    const entry = document.createElement('div');
+    entry.className = 'joker-feed-entry win-feed-entry';
+    entry.innerHTML = `<span class="jfe-player">${names}</span> wins <span class="jfe-amount">$${a.amount}</span>${a.handName ? `<div class="jfe-desc">${a.handName}</div>` : ''}`;
+    list.appendChild(entry);
+  });
+}
+
 export function clearJokerFeed() {
   const feed = document.getElementById('joker-feed');
   const list = document.getElementById('joker-feed-list');
   if (feed) feed.classList.add('hidden');
   if (list) list.innerHTML = '';
+  state.showdownFeedAdded = false;
 }

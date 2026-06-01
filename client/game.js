@@ -1,7 +1,7 @@
 import { state } from './state.js';
 import { showScreen } from './ui.js';
 import { makeCard, makeSmCard, formatCard } from './cards.js';
-import { renderJokerHand, renderArmedJokers } from './jokers.js';
+import { renderJokerHand, renderArmedJokers, addWinFeedEntry } from './jokers.js';
 import { send } from './ws.js';
 
 export function renderGame() {
@@ -179,14 +179,11 @@ function renderShowdown() {
   if (state.gameState.phase !== 'showdown' || !state.gameState.awards?.length) {
     banner.classList.add('hidden'); return;
   }
-  banner.classList.remove('hidden');
-  const lines = state.gameState.awards.map(a => {
-    const names = a.tokens
-      .map(t => (state.gameState.players ?? []).find(x => x.token === t)?.name ?? t)
-      .join(' & ');
-    return `${names} wins $${a.amount}` + (a.handName ? ` — ${a.handName}` : '');
-  });
-  banner.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
+  banner.classList.add('hidden');
+  if (!state.showdownFeedAdded) {
+    addWinFeedEntry(state.gameState.awards, state.gameState.players ?? []);
+    state.showdownFeedAdded = true;
+  }
 }
 
 export function renderGameOver(msg) {

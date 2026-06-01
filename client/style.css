@@ -713,6 +713,8 @@ input[type="text"]:focus, input[type="number"]:focus {
 .jfe-player { color: var(--accent); font-weight: 700; }
 .jfe-name   { color: #ce93d8; font-style: italic; }
 .jfe-desc   { color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
+.win-feed-entry { border-color: rgba(255,193,7,0.35); }
+.jfe-amount { color: #ffd54f; font-weight: 700; }
 
 /* Target selector overlay */
 .target-overlay {
