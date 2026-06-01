@@ -415,6 +415,188 @@ input[type="text"]:focus, input[type="number"]:focus {
 
 .card-sm.revealed.red { color: #c62828; }
 
+/* ---- Commit Screen ---- */
+.commit-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 24px 16px;
+  gap: 14px;
+  overflow-y: auto;
+  max-height: 100vh;
+}
+
+.commit-wrap h2 { color: var(--accent); }
+
+.timer-bar {
+  width: 100%;
+  max-width: 360px;
+  height: 6px;
+  background: #1a3a1a;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.timer-fill {
+  height: 100%;
+  background: var(--accent);
+  width: 100%;
+  transition: width 1s linear;
+}
+
+/* ---- Joker Cards ---- */
+.joker-list, .joker-hand-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  width: 100%;
+  max-width: 400px;
+}
+
+.joker-card {
+  background: #1a1a3a;
+  border: 2px solid #3a3a6a;
+  border-radius: 10px;
+  padding: 8px 10px;
+  min-width: 130px;
+  max-width: 160px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  user-select: none;
+}
+
+.joker-card:active { opacity: 0.8; }
+
+.joker-card.selected {
+  border-color: var(--accent);
+  background: #2a2a1a;
+}
+
+.joker-card.committed {
+  border-color: #e53935;
+  background: #2a1a1a;
+  cursor: default;
+}
+
+.joker-card.playable {
+  border-color: var(--safe);
+  cursor: pointer;
+}
+
+.joker-card.playable:hover { background: #1a2a1a; }
+
+.joker-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.joker-cat {
+  font-size: 0.65rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.joker-desc {
+  font-size: 0.72rem;
+  color: #ccc;
+  line-height: 1.3;
+}
+
+.joker-timing {
+  font-size: 0.65rem;
+  color: #888;
+}
+
+.joker-rarity-legendary { color: #ff6f00; }
+.joker-rarity-rare      { color: #7b1fa2; }
+.joker-rarity-common    { color: var(--muted); }
+
+/* Joker hand during game */
+.joker-hand-area {
+  padding: 4px 0;
+}
+
+.play-joker-area {
+  border-top: 1px solid #2e5c2e;
+  margin-top: 6px;
+  padding-top: 8px;
+}
+
+.play-joker-area .joker-card { background: #1a2a1a; border-color: var(--safe); }
+
+/* Target selector overlay */
+.target-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 100;
+  padding: 24px;
+}
+
+.target-overlay h3 { color: var(--accent); }
+
+.target-btn {
+  background: var(--felt);
+  border: 2px solid #2e5c2e;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1rem;
+  padding: 12px 24px;
+  cursor: pointer;
+  width: 100%;
+  max-width: 280px;
+  text-align: left;
+}
+
+.target-btn:hover { border-color: var(--accent); }
+
+.target-cancel {
+  background: transparent;
+  border: 1px solid #555;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 0.9rem;
+  padding: 8px 20px;
+  cursor: pointer;
+  margin-top: 4px;
+}
+
+/* ---- Joker reveal popup ---- */
+.reveal-popup {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1a1a3a;
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  padding: 14px 20px;
+  max-width: 340px;
+  width: calc(100% - 40px);
+  z-index: 200;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  text-align: center;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+  to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+}
+
 /* All-in badge */
 .allin-badge {
   font-size: 0.6rem;

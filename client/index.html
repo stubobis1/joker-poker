@@ -38,6 +38,18 @@
     </div>
   </div>
 
+  <!-- SCREEN: Commit Phase -->
+  <div id="screen-commit" class="screen">
+    <div class="commit-wrap">
+      <h2>Arm Your Jokers</h2>
+      <p class="status-text">Select which jokers to arm for this hand. Opponents see the count, not the type.<br>Armed jokers are spent whether played or not.</p>
+      <div id="commit-joker-list" class="joker-list"></div>
+      <button id="btn-commit" class="btn-primary">Commit (<span id="commit-count">0</span> armed)</button>
+      <div id="commit-timer-bar" class="timer-bar"><div id="commit-timer-fill" class="timer-fill"></div></div>
+      <p id="commit-waiting" class="status-text hidden"></p>
+    </div>
+  </div>
+
   <!-- SCREEN: Game Table -->
   <div id="screen-game" class="screen">
     <div class="table-wrap">
@@ -57,6 +69,11 @@
         <div id="hole-cards" class="card-row"></div>
       </div>
 
+      <!-- Joker hand (always visible during game) -->
+      <div id="joker-hand-area" class="joker-hand-area hidden">
+        <div id="joker-hand-list" class="joker-hand-list"></div>
+      </div>
+
       <!-- Action controls -->
       <div id="action-area" class="action-area hidden">
         <div class="action-info">
@@ -70,6 +87,10 @@
             <input id="raise-amount" type="number" min="0" step="1" placeholder="Amount" />
             <button id="btn-raise" class="btn-action btn-raise">Raise</button>
           </div>
+        </div>
+        <!-- Play joker: only shown when it's your turn and you have committed jokers -->
+        <div id="play-joker-area" class="play-joker-area hidden">
+          <div id="committed-joker-list" class="joker-hand-list"></div>
         </div>
       </div>
 

@@ -3,12 +3,17 @@ const SERVER_HTTP = 'http://localhost:3000';
 const SERVER_WS   = 'ws://localhost:3000';
 
 // ---- State ----
-let ws        = null;
-let myToken   = localStorage.getItem('playerToken') || null;
-let lobbyCode = null;
-let myName    = '';
-let gameState = null;   // last full game_state from server
-let myHole    = [];     // private hole cards
+let ws            = null;
+let myToken       = localStorage.getItem('playerToken') || null;
+let lobbyCode     = null;
+let myName        = '';
+let gameState     = null;   // last full game_state from server
+let myHole        = [];     // private hole cards
+let myJokers      = [];     // available jokers (from your_hand)
+let myCommitted   = [];     // committed jokers (from your_hand)
+let selectedToArm = new Set(); // joker ids selected in commit phase
+let pendingJoker  = null;   // { id } waiting for target selection
+let commitDeadline = null;  // Date for countdown timer
 
 // ---- Screens ----
 function showScreen(id) {
@@ -100,16 +105,31 @@ function handleMessage(msg) {
 
     case 'game_state':
       gameState = msg.state;
-      renderGame();
+      if (gameState.phase === 'committing') {
+        renderCommitScreen();
+      } else {
+        renderGame();
+      }
       break;
 
     case 'your_hand':
-      myHole = msg.holeCards ?? [];
+      myHole      = msg.holeCards ?? [];
+      myJokers    = msg.jokers    ?? [];
+      myCommitted = msg.committed ?? [];
       renderMyCards();
+      renderJokerHand();
       break;
 
     case 'event':
       handleEvent(msg);
+      break;
+
+    case 'joker_reveal':
+      showJokerReveal(msg);
+      break;
+
+    case 'joker_played':
+      showJokerPlayedBanner(msg);
       break;
 
     case 'game_over':
@@ -167,6 +187,7 @@ function renderGame() {
   renderCommunity();
   renderOpponents();
   renderMyCards();
+  renderJokerHand();
   renderActionArea();
   renderShowdown();
   renderPot();
@@ -295,6 +316,7 @@ function renderActionArea() {
   if (!isMyTurn) { area.classList.add('hidden'); return; }
 
   area.classList.remove('hidden');
+  renderPlayJokerArea();
 
   const toCall = Math.max(0, (gameState.currentBet ?? 0) - (me.bet ?? 0));
   const canCheck = toCall === 0;
@@ -329,6 +351,187 @@ function renderShowdown() {
     return `${names} wins $${a.amount}` + (a.handName ? ` — ${a.handName}` : '');
   });
   banner.innerHTML = lines.map(l => `<div>${l}</div>`).join('');
+}
+
+// ---- Commit Screen ----
+
+function renderCommitScreen() {
+  showScreen('screen-commit');
+  selectedToArm.clear();
+  updateCommitCount();
+
+  const list = document.getElementById('commit-joker-list');
+  list.innerHTML = '';
+  for (const j of myJokers) {
+    const card = makeJokerCard(j, false);
+    card.addEventListener('click', () => {
+      if (selectedToArm.has(j.id)) { selectedToArm.delete(j.id); card.classList.remove('selected'); }
+      else { selectedToArm.add(j.id); card.classList.add('selected'); }
+      updateCommitCount();
+    });
+    list.appendChild(card);
+  }
+
+  // Start countdown (15s)
+  commitDeadline = Date.now() + 15000;
+  startCommitCountdown();
+
+  document.getElementById('commit-waiting').classList.add('hidden');
+}
+
+function updateCommitCount() {
+  document.getElementById('commit-count').textContent = selectedToArm.size;
+}
+
+function startCommitCountdown() {
+  const fill = document.getElementById('commit-timer-fill');
+  const total = 15000;
+  const tick = () => {
+    const remaining = Math.max(0, commitDeadline - Date.now());
+    fill.style.width = `${(remaining / total) * 100}%`;
+    if (remaining > 0 && gameState?.phase === 'committing') requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+}
+
+document.getElementById('btn-commit').addEventListener('click', () => {
+  send({ type: 'commit_jokers', joker_ids: [...selectedToArm] });
+  document.getElementById('btn-commit').disabled = true;
+  document.getElementById('commit-waiting').textContent = 'Waiting for other players…';
+  document.getElementById('commit-waiting').classList.remove('hidden');
+  // Disable all joker cards
+  document.querySelectorAll('#commit-joker-list .joker-card').forEach(c => c.style.pointerEvents = 'none');
+});
+
+// ---- Joker Hand (during game) ----
+
+function renderJokerHand() {
+  const area = document.getElementById('joker-hand-area');
+  const list = document.getElementById('joker-hand-list');
+  list.innerHTML = '';
+
+  if (!myJokers.length && !myCommitted.length) { area.classList.add('hidden'); return; }
+  area.classList.remove('hidden');
+
+  for (const j of myJokers) {
+    const card = makeJokerCard(j, false);
+    card.title = `${j.name}: ${j.desc}`;
+    list.appendChild(card);
+  }
+  for (const j of myCommitted) {
+    const card = makeJokerCard(j, true);
+    card.title = `[ARMED] ${j.name}: ${j.desc}`;
+    list.appendChild(card);
+  }
+}
+
+function renderPlayJokerArea() {
+  const area = document.getElementById('play-joker-area');
+  if (!myCommitted.length) { area.classList.add('hidden'); return; }
+
+  const isMyTurn = gameState?.actionIdx !== -1 &&
+    gameState?.players?.[gameState.actionIdx]?.token === myToken;
+  if (!isMyTurn) { area.classList.add('hidden'); return; }
+
+  area.classList.remove('hidden');
+  const list = document.getElementById('committed-joker-list');
+  list.innerHTML = '';
+
+  for (const j of myCommitted) {
+    const card = makeJokerCard(j, false);
+    card.classList.add('playable');
+    card.addEventListener('click', () => onPlayJokerClick(j));
+    list.appendChild(card);
+  }
+}
+
+function onPlayJokerClick(joker) {
+  if (joker.target === 'opponent') {
+    // Need to pick a target
+    pendingJoker = joker;
+    showTargetSelector();
+  } else {
+    send({ type: 'play_joker', joker_id: joker.id, target: null });
+  }
+}
+
+function showTargetSelector() {
+  const opponents = (gameState?.players ?? []).filter(
+    p => p.token !== myToken && !p.folded && !p.sittingOut
+  );
+  const overlay = document.createElement('div');
+  overlay.className = 'target-overlay';
+  overlay.innerHTML = `<h3>Choose target for ${pendingJoker.name}</h3>`;
+  for (const opp of opponents) {
+    const btn = document.createElement('button');
+    btn.className = 'target-btn';
+    btn.textContent = `${opp.name}  ($${opp.chips})`;
+    btn.addEventListener('click', () => {
+      document.body.removeChild(overlay);
+      send({ type: 'play_joker', joker_id: pendingJoker.id, target: opp.token });
+      pendingJoker = null;
+    });
+    overlay.appendChild(btn);
+  }
+  const cancel = document.createElement('button');
+  cancel.className = 'target-cancel';
+  cancel.textContent = 'Cancel';
+  cancel.addEventListener('click', () => { document.body.removeChild(overlay); pendingJoker = null; });
+  overlay.appendChild(cancel);
+  document.body.appendChild(overlay);
+}
+
+function makeJokerCard(j, isCommitted) {
+  const card = document.createElement('div');
+  card.className = `joker-card${isCommitted ? ' committed' : ''}`;
+  const rarityClass = `joker-rarity-${j.rarity ?? 'common'}`;
+  card.innerHTML = `
+    <div class="joker-name ${rarityClass}">${j.name}</div>
+    <div class="joker-cat">${j.category ?? ''}</div>
+    <div class="joker-desc">${j.desc ?? ''}</div>
+    <div class="joker-timing">${(j.timing ?? []).join(', ')}</div>
+  `;
+  return card;
+}
+
+// ---- Joker reveal popup ----
+
+function showJokerReveal(msg) {
+  const popup = document.createElement('div');
+  popup.className = 'reveal-popup';
+
+  let html = '';
+  switch (msg.type) {
+    case 'oracle':
+      html = `<strong>Oracle</strong><br>Next card: ${msg.cards.map(formatCard).join(', ') || '?'}`;
+      break;
+    case 'tell':
+      html = `<strong>Tell</strong><br>${msg.targetName}'s cards: ${(msg.cards ?? []).map(formatCard).join(', ')}`;
+      break;
+    case 'x_ray':
+      html = `<strong>X-Ray</strong><br>${(msg.opponents ?? []).map(o => `${o.name}: ${o.cards.map(formatCard).join(' ')}`).join('<br>')}`;
+      break;
+    case 'bloodhound':
+      html = `<strong>Bloodhound</strong><br>${msg.leaderName} leads with ${msg.handName}`;
+      break;
+    case 'second_look':
+      html = `<strong>Second Look</strong><br>Top 3 deck: ${(msg.cards ?? []).map(formatCard).join(', ')}`;
+      break;
+    default:
+      html = JSON.stringify(msg);
+  }
+  popup.innerHTML = html;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 6000);
+}
+
+function showJokerPlayedBanner(msg) {
+  const popup = document.createElement('div');
+  popup.className = 'reveal-popup';
+  popup.style.borderColor = '#7b1fa2';
+  popup.innerHTML = `<strong>${msg.playerName}</strong> played <em>${msg.jokerId.replace(/_/g, ' ')}</em>`;
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 3000);
 }
 
 // ---- Action Buttons ----
