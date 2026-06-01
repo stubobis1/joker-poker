@@ -83,6 +83,17 @@ input[type="text"], input[type="number"] {
   width: 100%;
 }
 
+input[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 input[type="text"]:focus, input[type="number"]:focus {
   border-color: var(--accent);
 }
@@ -103,6 +114,7 @@ input[type="text"]:focus, input[type="number"]:focus {
 }
 
 .btn-primary:active { opacity: 0.8; }
+.btn-primary:disabled { opacity: 0.35; cursor: not-allowed; }
 
 .btn-copy {
   background: transparent;
@@ -297,14 +309,13 @@ input[type="text"]:focus, input[type="number"]:focus {
   flex-shrink: 0;
 }
 
-.card.red  { color: #c62828; }
 .card.back {
   background: var(--card-back);
   color: transparent;
 }
 
 .card .rank { font-size: 1rem; line-height: 1; }
-.card .suit { font-size: 0.85rem; line-height: 1; }
+.suit-img { width: 1em; height: 1em; display: block; object-fit: contain; }
 
 .card-placeholder {
   width: var(--card-w);
@@ -336,6 +347,12 @@ input[type="text"]:focus, input[type="number"]:focus {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-height: 110px;
+}
+
+.action-buttons.invisible {
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .action-info {
@@ -343,6 +360,14 @@ input[type="text"]:focus, input[type="number"]:focus {
   color: var(--muted);
   text-align: center;
   min-height: 1.2em;
+}
+
+.action-status {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.9rem;
+  padding: 6px 0;
+  font-style: italic;
 }
 
 .action-buttons {
@@ -392,6 +417,20 @@ input[type="text"]:focus, input[type="number"]:focus {
   line-height: 1.6;
 }
 
+.game-over-winner {
+  font-size: 1.6rem;
+  font-weight: bold;
+  color: #ffd700;
+  margin-bottom: 0.4em;
+}
+.game-over-standings {
+  margin-bottom: 0.8em;
+  line-height: 1.8;
+}
+.game-over-btn {
+  margin-top: 0.4em;
+}
+
 /* Small card in opponent seat */
 .card-sm {
   width: 28px;
@@ -413,7 +452,6 @@ input[type="text"]:focus, input[type="number"]:focus {
   justify-content: center;
 }
 
-.card-sm.revealed.red { color: #c62828; }
 
 /* ---- Waiting Room extras ---- */
 .host-settings, .guest-settings {
@@ -609,13 +647,72 @@ input[type="text"]:focus, input[type="number"]:focus {
   padding: 4px 0;
 }
 
-.play-joker-area {
-  border-top: 1px solid #2e5c2e;
-  margin-top: 6px;
-  padding-top: 8px;
+/* Armed jokers standalone area (above action area) */
+.armed-jokers-area {
+  background: rgba(0,0,0,0.35);
+  border: 1px solid #2e5c2e;
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+.armed-jokers-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--safe);
+  margin-bottom: 6px;
+  font-weight: 700;
+}
+.armed-jokers-area .joker-card { background: #1a2a1a; border-color: var(--safe); }
+.armed-jokers-area .joker-card.playable { cursor: pointer; }
+.armed-jokers-area .joker-card.not-your-turn { opacity: 0.55; cursor: default; }
+.joker-card.used { opacity: 0.35; filter: grayscale(0.8); cursor: default; }
+
+/* Check/Call single slot — no gap between Fold and Raise */
+.check-call-slot {
+  flex: 1;
+  min-width: 70px;
+  position: relative;
+}
+.check-call-slot .btn-action {
+  width: 100%;
 }
 
-.play-joker-area .joker-card { background: #1a2a1a; border-color: var(--safe); }
+/* Joker played feed */
+.joker-feed {
+  position: fixed;
+  top: 80px;
+  right: 12px;
+  width: 200px;
+  background: rgba(10,10,30,0.88);
+  border: 1px solid #7b1fa2;
+  border-radius: 10px;
+  padding: 8px 10px;
+  z-index: 150;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.joker-feed-title {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #7b1fa2;
+  margin-bottom: 4px;
+  font-weight: 700;
+}
+.joker-feed-entry {
+  font-size: 0.78rem;
+  line-height: 1.4;
+  border-bottom: 1px solid rgba(123,31,162,0.25);
+  padding-bottom: 5px;
+  margin-bottom: 2px;
+}
+.joker-feed-entry:last-child { border-bottom: none; }
+.jfe-player { color: var(--accent); font-weight: 700; }
+.jfe-name   { color: #ce93d8; font-style: italic; }
+.jfe-desc   { color: var(--muted); font-size: 0.72rem; margin-top: 2px; }
 
 /* Target selector overlay */
 .target-overlay {
@@ -676,6 +773,35 @@ input[type="text"]:focus, input[type="number"]:focus {
   line-height: 1.5;
   text-align: center;
   animation: slideUp 0.3s ease;
+}
+
+.joker-played-desc {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  opacity: 0.75;
+  font-style: italic;
+}
+
+/* Joker error toast */
+.joker-error-toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-80px);
+  background: #3a0a0a;
+  border: 2px solid #c62828;
+  border-radius: 10px;
+  padding: 10px 20px;
+  color: #ef9a9a;
+  font-size: 0.88rem;
+  font-weight: 600;
+  z-index: 300;
+  transition: transform 0.25s ease;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.joker-error-toast.visible {
+  transform: translateX(-50%) translateY(0);
 }
 
 @keyframes slideUp {

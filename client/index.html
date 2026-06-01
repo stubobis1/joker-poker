@@ -45,11 +45,41 @@
           <label>Starting Chips</label>
           <input id="setting-chips" type="number" min="100" max="100000" step="100" value="1000" />
         </div>
+        <div class="settings-row">
+          <label>Starting Jokers</label>
+          <input id="setting-starting-jokers" type="number" min="0" max="10" step="1" value="3" />
+        </div>
+        <div class="settings-row">
+          <label>Jokers Per Round</label>
+          <input id="setting-jokers-per-round" type="number" min="0" max="5" step="1" value="1" />
+        </div>
+        <div class="settings-row">
+          <label>Max Jokers Held</label>
+          <input id="setting-max-jokers" type="number" min="1" max="10" step="1" value="3" />
+        </div>
+        <div class="settings-row">
+          <label>Max Armed Per Round</label>
+          <input id="setting-max-per-round" type="number" min="0" max="10" step="1" value="3" />
+        </div>
+        <div class="settings-row">
+          <label>Allow Late Join</label>
+          <input id="setting-late-join" type="checkbox" />
+        </div>
       </div>
 
       <!-- Non-host settings (read-only) -->
       <div id="guest-settings" class="guest-settings hidden">
-        <p class="status-text">BB: <span id="display-bb">50</span> &nbsp;|&nbsp; Chips: <span id="display-chips">1000</span></p>
+        <p class="status-text">
+          BB: <span id="display-bb">50</span> &nbsp;|&nbsp;
+          Chips: <span id="display-chips">1000</span>
+        </p>
+        <p class="status-text">
+          Start Jokers: <span id="display-starting-jokers">3</span> &nbsp;|&nbsp;
+          Per Round: <span id="display-jokers-per-round">1</span> &nbsp;|&nbsp;
+          Max Held: <span id="display-max-jokers">3</span> &nbsp;|&nbsp;
+          Max Armed: <span id="display-max-per-round">3</span> &nbsp;|&nbsp;
+          Late Join: <span id="display-late-join">Off</span>
+        </p>
       </div>
 
       <ul id="player-list"></ul>
@@ -76,6 +106,12 @@
 
   <!-- SCREEN: Game Table -->
   <div id="screen-game" class="screen">
+    <!-- Joker played feed (right side) -->
+    <div id="joker-feed" class="joker-feed hidden">
+      <div class="joker-feed-title">Jokers Played</div>
+      <div id="joker-feed-list" class="joker-feed-list"></div>
+    </div>
+
     <div class="table-wrap">
 
       <!-- Opponents (top) -->
@@ -98,23 +134,28 @@
         <div id="joker-hand-list" class="joker-hand-list"></div>
       </div>
 
+      <!-- Armed jokers (always visible during hand when player has committed jokers) -->
+      <div id="armed-jokers-area" class="armed-jokers-area hidden">
+        <div class="armed-jokers-label">Armed Jokers</div>
+        <div id="armed-jokers-list" class="joker-hand-list"></div>
+      </div>
+
       <!-- Action controls -->
       <div id="action-area" class="action-area hidden">
         <div class="action-info">
           <span id="action-bet-to-call"></span>
         </div>
+        <div id="action-status" class="action-status hidden"></div>
         <div class="action-buttons">
           <button id="btn-fold"  class="btn-action btn-fold">Fold</button>
-          <button id="btn-check" class="btn-action btn-check">Check</button>
-          <button id="btn-call"  class="btn-action btn-call">Call</button>
+          <div class="check-call-slot">
+            <button id="btn-check" class="btn-action btn-check">Check</button>
+            <button id="btn-call"  class="btn-action btn-call">Call</button>
+          </div>
           <div class="raise-row">
             <input id="raise-amount" type="number" min="0" step="1" placeholder="Amount" />
             <button id="btn-raise" class="btn-action btn-raise">Raise</button>
           </div>
-        </div>
-        <!-- Play joker: only shown when it's your turn and you have committed jokers -->
-        <div id="play-joker-area" class="play-joker-area hidden">
-          <div id="committed-joker-list" class="joker-hand-list"></div>
         </div>
       </div>
 
