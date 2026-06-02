@@ -19,7 +19,7 @@ const serverSaveMsg = document.getElementById('server-save-msg');
 serverInput.value = localStorage.getItem('serverUrl') || '';
 btnSaveServer.addEventListener('click', () => {
   let val = serverInput.value.trim().replace(/\/$/, '');
-  if (val && !/^wss?:\/\//i.test(val)) val = 'ws://' + val;
+  if (val && !/^wss?:\/\//i.test(val)) val = (location.protocol === 'https:' ? 'wss' : 'ws') + '://' + val;
   if (val && !/:\d+$/.test(val.replace(/^wss?:\/\//, ''))) val = val + ':3777';
   if (val) {
     serverInput.value = val;
@@ -33,6 +33,7 @@ btnSaveServer.addEventListener('click', () => {
 function pingServer(wsBase, attempt = 1, maxAttempts = 5) {
   serverSaveMsg.textContent = `Checking... (${attempt}/${maxAttempts})`;
   serverSaveMsg.className = 'server-save-msg';
+  let ws;
   const timeout = setTimeout(() => {
     ws.close();
     if (attempt < maxAttempts) {
@@ -42,7 +43,7 @@ function pingServer(wsBase, attempt = 1, maxAttempts = 5) {
       serverSaveMsg.className = 'server-save-msg server-save-msg--error';
     }
   }, 4000);
-  const ws = new WebSocket(`${wsBase}/ping`);
+  ws = new WebSocket(`${wsBase}/ping`);
   ws.addEventListener('message', e => {
     clearTimeout(timeout);
     try {
