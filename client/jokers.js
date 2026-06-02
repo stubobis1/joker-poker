@@ -248,6 +248,17 @@ export function addWinFeedEntry(awards, players) {
   });
 }
 
+export function addPrivateHandFeedEntry(summary) {
+  const feed = document.getElementById('joker-feed');
+  const list = document.getElementById('joker-feed-list');
+  if (!feed || !list) return;
+  feed.classList.remove('hidden');
+  const entry = document.createElement('div');
+  entry.className = 'joker-feed-entry private-feed-entry';
+  entry.innerHTML = `<span class="jfe-private-label">Your cards:</span> <span class="jfe-effect">${summary}</span>`;
+  list.appendChild(entry);
+}
+
 export function clearJokerFeed() {
   const feed = document.getElementById('joker-feed');
   const list = document.getElementById('joker-feed-list');

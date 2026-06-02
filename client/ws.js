@@ -4,7 +4,7 @@ import { showScreen, showError } from './ui.js';
 import { renderWaitingRoom } from './waiting.js';
 import { renderGame, renderMyCards, renderGameOver } from './game.js';
 import { renderCommitScreen } from './commit.js';
-import { renderJokerHand, renderArmedJokers, showJokerReveal, addJokerFeedEntry, clearJokerFeed, showJokerError, showJokerTargetPicker } from './jokers.js';
+import { renderJokerHand, renderArmedJokers, showJokerReveal, addJokerFeedEntry, addPrivateHandFeedEntry, clearJokerFeed, showJokerError, showJokerTargetPicker } from './jokers.js';
 
 function randomHex(len) {
   return Array.from(crypto.getRandomValues(new Uint8Array(len)))
@@ -134,6 +134,10 @@ export function handleMessage(msg) {
 
     case 'joker_reveal':
       showJokerReveal(msg);
+      break;
+
+    case 'joker_private':
+      addPrivateHandFeedEntry(msg.summary);
       break;
 
     case 'joker_played':
