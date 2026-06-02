@@ -31,6 +31,11 @@ btnSaveServer.addEventListener('click', () => {
 });
 
 function pingServer(wsBase, attempt = 1, maxAttempts = 5) {
+  if (location.protocol === 'https:' && /^ws:\/\//i.test(wsBase)) {
+    serverSaveMsg.textContent = 'Blocked: use wss:// on HTTPS';
+    serverSaveMsg.className = 'server-save-msg server-save-msg--error';
+    return;
+  }
   serverSaveMsg.textContent = `Checking... (${attempt}/${maxAttempts})`;
   serverSaveMsg.className = 'server-save-msg';
   let ws;
