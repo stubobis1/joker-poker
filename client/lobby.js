@@ -1,4 +1,5 @@
 import { SERVER_HTTP } from './config.js';
+import { COMMIT_HASH } from './version.js';
 import { state } from './state.js';
 import { showError } from './ui.js';
 import { connectWS } from './ws.js';
@@ -27,6 +28,7 @@ btnSaveServer.addEventListener('click', () => {
   } else {
     localStorage.removeItem('serverUrl');
   }
+  console.log(`joker-poker ${COMMIT_HASH} — connecting to ${val || 'ws://localhost:3777'}`);
   pingServer(val || 'ws://localhost:3777');
 });
 
