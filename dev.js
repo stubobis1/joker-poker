@@ -4,7 +4,7 @@ import { platform } from 'os';
 
 const procs = [
   spawn('node', ['serve.js'],           { stdio: 'inherit' }),
-  spawn('node', ['server/src/index.js'], { stdio: 'inherit' }),
+  spawn('node', ['server/src/index.js'], { stdio: 'inherit', env: { ...process.env, PORT: '3777' } }),
 ];
 
 const opener = platform() === 'win32' ? 'cmd' :
