@@ -6,6 +6,13 @@ import { renderGame, renderMyCards, renderGameOver } from './game.js';
 import { renderCommitScreen } from './commit.js';
 import { renderJokerHand, renderArmedJokers, showJokerReveal, addJokerFeedEntry, clearJokerFeed, showJokerError } from './jokers.js';
 
+function randomHex(len) {
+  return Array.from(crypto.getRandomValues(new Uint8Array(len)))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+    .slice(0, len);
+}
+
 let ws = null;
 
 export const send = obj => {
@@ -16,8 +23,7 @@ export const send = obj => {
 export function connectWS(code, name) {
   state.lobbyCode = code;
   if (!state.myToken) {
-    const uuid = crypto.randomUUID?.() ?? Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b => b.toString(16).padStart(2, '0')).join('');
-    const shortId = uuid.slice(0, 8);
+    const shortId = randomHex(8);
     state.myToken = `${name.replace(/[^a-zA-Z0-9]/g, '_')}-${shortId}`;
     sessionStorage.setItem('playerToken', state.myToken);
   }
