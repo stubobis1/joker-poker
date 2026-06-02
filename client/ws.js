@@ -16,7 +16,8 @@ export const send = obj => {
 export function connectWS(code, name) {
   state.lobbyCode = code;
   if (!state.myToken) {
-    const shortId = crypto.randomUUID().slice(0, 8);
+    const uuid = crypto.randomUUID?.() ?? Array.from(crypto.getRandomValues(new Uint8Array(4))).map(b => b.toString(16).padStart(2, '0')).join('');
+    const shortId = uuid.slice(0, 8);
     state.myToken = `${name.replace(/[^a-zA-Z0-9]/g, '_')}-${shortId}`;
     sessionStorage.setItem('playerToken', state.myToken);
   }
