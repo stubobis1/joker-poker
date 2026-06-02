@@ -20,8 +20,16 @@ export function renderGame() {
 const renderPot = () => {
   const gs  = state.gameState;
   const pot = gs.pot ?? 0;
-  document.getElementById('pot-display').textContent = pot > 0 ? `Pot: ${pot}` : '';
+  document.getElementById('pot-display').textContent = pot > 0 ? `Pot: $${pot}` : '';
   document.getElementById('phase-label').textContent = gs.phase ?? '';
+
+  const bbEl = document.getElementById('bb-display');
+  if (gs.phase !== 'waiting') {
+    bbEl.textContent = `Big Blind: $${gs.bb ?? '?'}`;
+    bbEl.classList.remove('hidden');
+  } else {
+    bbEl.classList.add('hidden');
+  }
 
   const counterEl = document.getElementById('blind-double-counter');
   const handsUntil = gs.handsUntilBlindDouble ?? null;
@@ -40,6 +48,15 @@ const renderPot = () => {
     deckEl.classList.remove('hidden');
   } else {
     deckEl.classList.add('hidden');
+  }
+
+  const betsEl = document.getElementById('player-bets-display');
+  const activePlayers = (gs.players ?? []).filter(p => !p.sittingOut);
+  if (gs.phase !== 'waiting' && gs.phase !== 'committing' && activePlayers.length > 0) {
+    betsEl.textContent = activePlayers.map(p => `${p.name}: $${p.bet}`).join('  ');
+    betsEl.classList.remove('hidden');
+  } else {
+    betsEl.classList.add('hidden');
   }
 };
 
@@ -114,10 +131,10 @@ function makeOpponentSeat(p) {
   cardRow.className = 'opponent-cards';
   const wilds      = new Set(state.gameState.wilds ?? []);
   const revealed   = state.revealedOpponents.find(r => r.token === p.token);
-  const showCards  = state.gameState.phase === 'showdown' || !!revealed;
+  const knownCards = (p.holeCards?.length ? p.holeCards : revealed?.cards) ?? [];
+  const showCards  = knownCards.length > 0;
   const cardCount  = p.holeCards?.length > 0 ? p.holeCards.length : (p.sittingOut ? 0 : (p.holeCardCount ?? 2));
   for (let i = 0; i < cardCount; i++) {
-    const knownCards = (p.holeCards?.length ? p.holeCards : revealed?.cards) ?? [];
     if (knownCards[i] && showCards) {
       cardRow.appendChild(makeSmCard(knownCards[i], wilds.has(knownCards[i])));
     } else {
@@ -126,7 +143,12 @@ function makeOpponentSeat(p) {
       cardRow.appendChild(c);
     }
   }
-  if (revealed && state.gameState.phase !== 'showdown') {
+  if (p.holeCards?.length > 0 && state.gameState.phase !== 'showdown') {
+    const badge = document.createElement('div');
+    badge.className   = 'tell-badge';
+    badge.textContent = 'SHOWN';
+    seat.appendChild(badge);
+  } else if (revealed && state.gameState.phase !== 'showdown') {
     const badge = document.createElement('div');
     badge.className   = 'tell-badge';
     badge.textContent = 'TELL';
@@ -158,8 +180,19 @@ function renderActionArea() {
   const status  = document.getElementById('action-status');
   const me      = (state.gameState?.players ?? []).find(p => p.token === state.myToken);
 
+  const showCardsBtn = document.getElementById('btn-show-cards');
   if (!me || state.gameState.phase === 'showdown' || state.gameState.phase === 'waiting') {
-    area.classList.add('hidden'); return;
+    area.classList.add('hidden');
+    showCardsBtn.classList.add('hidden');
+    return;
+  }
+
+  const alreadyShown = (state.gameState.players ?? []).find(p => p.token === state.myToken)?.holeCards?.length > 0;
+  const hasHole = state.myHole.length > 0;
+  if (hasHole && !alreadyShown && me.folded) {
+    showCardsBtn.classList.remove('hidden');
+  } else {
+    showCardsBtn.classList.add('hidden');
   }
 
   area.classList.remove('hidden');
@@ -171,6 +204,7 @@ function renderActionArea() {
 
   if (!isMyTurn) {
     buttons.classList.add('invisible');
+    document.getElementById('raise-quick-btns').classList.add('hidden');
     document.getElementById('play-joker-area')?.classList.add('hidden');
     document.getElementById('action-bet-to-call').textContent = '';
     status.classList.remove('hidden');
@@ -192,12 +226,13 @@ function renderActionArea() {
   status.classList.add('hidden');
   buttons.classList.remove('invisible');
 
-  const toCall   = Math.max(0, (state.gameState.currentBet ?? 0) - (me.bet ?? 0));
-  const canCheck = toCall === 0;
+  const toCall    = Math.max(0, (state.gameState.currentBet ?? 0) - (me.bet ?? 0));
+  const hasFreeCheck = (state.gameState.activeEffects?.halfTime ?? []).includes(state.myToken);
+  const canCheck  = toCall === 0;
 
   document.getElementById('btn-check').style.display = canCheck ? '' : 'none';
   document.getElementById('btn-call').style.display  = canCheck ? 'none' : '';
-  document.getElementById('btn-call').textContent    = `Call $${toCall}`;
+  document.getElementById('btn-call').textContent    = hasFreeCheck ? 'Check (free)' : `Call $${toCall}`;
   document.getElementById('action-bet-to-call').textContent = canCheck
     ? ''
     : `Current bet: $${state.gameState.currentBet}  (call $${toCall})`;
@@ -206,6 +241,21 @@ function renderActionArea() {
   const raiseInput = document.getElementById('raise-amount');
   if (!raiseInput.value || parseInt(raiseInput.value) < minRaise) raiseInput.value = minRaise;
   raiseInput.min = minRaise;
+
+  const bb = state.gameState.bb ?? 50;
+  const quickArea = document.getElementById('raise-quick-btns');
+  quickArea.classList.remove('hidden');
+  document.getElementById('btn-raise-p10bb').textContent = `+${bb * 10}`;
+  document.getElementById('btn-raise-p1bb').textContent  = `+${bb}`;
+  document.getElementById('btn-raise-m1bb').textContent  = `-${bb}`;
+  document.getElementById('btn-raise-m10bb').textContent = `-${bb * 10}`;
+}
+
+const SUIT_SYM = { h: '♥', d: '♦', c: '♣', s: '♠' };
+function fmtCardText(c, isWild = false) {
+  if (!c) return '?';
+  if (isWild) return '?☺';
+  return c.slice(0, -1).replace('T', '10') + (SUIT_SYM[c.slice(-1)] ?? c.slice(-1));
 }
 
 function renderShowdown() {
@@ -213,11 +263,79 @@ function renderShowdown() {
   if (state.gameState.phase !== 'showdown' || !state.gameState.awards?.length) {
     banner.classList.add('hidden'); return;
   }
-  banner.classList.add('hidden');
+
   if (!state.showdownFeedAdded) {
     addWinFeedEntry(state.gameState.awards, state.gameState.players ?? []);
     state.showdownFeedAdded = true;
   }
+
+  if (state.showdownRendered) return;
+  state.showdownRendered = true;
+
+  const showdownHands = state.gameState.showdownHands ?? {};
+  const awards        = state.gameState.awards ?? [];
+  const players       = state.gameState.players ?? [];
+  const wilds         = new Set(state.gameState.wilds ?? []);
+  const winnerTokens  = new Set(awards.flatMap(a => a.tokens).filter((_, i, arr) => arr));
+
+  banner.innerHTML = '';
+  banner.classList.remove('hidden');
+
+  const title = document.createElement('div');
+  title.className   = 'sd-title';
+  title.textContent = 'Showdown';
+  banner.appendChild(title);
+
+  const handsEl = document.createElement('div');
+  handsEl.className = 'sd-hands';
+
+  const active = players.filter(p => !p.folded && !p.sittingOut &&
+    (p.holeCards?.length > 0 || showdownHands[p.token]));
+  for (const p of active) {
+    const hand      = showdownHands[p.token];
+    const isWinner  = winnerTokens.has(p.token);
+    const award     = awards.find(a => a.tokens.includes(p.token) &&
+      a.handName !== 'Tax Man' && a.handName !== 'Insurance');
+    const bestCards = hand?.cards ?? p.holeCards ?? [];
+
+    const row = document.createElement('div');
+    row.className = 'sd-player-row' + (isWinner ? ' sd-winner' : '');
+
+    const nameEl = document.createElement('span');
+    nameEl.className   = 'sd-player-name';
+    nameEl.textContent = p.name;
+    row.appendChild(nameEl);
+
+    const descEl = document.createElement('span');
+    descEl.className   = 'sd-hand-desc';
+    const prefix       = isWinner ? `won $${award?.amount ?? '?'} with` : 'had';
+    descEl.textContent = `${prefix} ${hand?.name ?? '?'}:`;
+    row.appendChild(descEl);
+
+    const cardsEl = document.createElement('span');
+    cardsEl.className = 'sd-hand-cards';
+    bestCards.forEach(c => {
+      const isWild = wilds.has(c);
+      const s = c?.slice(-1);
+      const span = document.createElement('span');
+      span.className = 'sd-card' + (isWild ? ' wild' : (s === 'h' || s === 'd' ? ' red' : ''));
+      span.textContent = fmtCardText(c, isWild);
+      cardsEl.appendChild(span);
+    });
+    row.appendChild(cardsEl);
+
+    handsEl.appendChild(row);
+  }
+  banner.appendChild(handsEl);
+
+  const btn = document.createElement('button');
+  btn.className   = 'btn-primary sd-next-btn';
+  btn.textContent = 'Arm Jokers →';
+  btn.addEventListener('click', () => {
+    send({ type: 'next_hand' });
+    banner.classList.add('hidden');
+  });
+  banner.appendChild(btn);
 }
 
 export function renderGameOver(msg) {
@@ -242,10 +360,36 @@ export function renderGameOver(msg) {
   });
 }
 
+document.getElementById('btn-show-cards').addEventListener('click', () => { send({ type: 'show_cards' }); });
+
 document.getElementById('btn-fold').addEventListener('click',  () => { console.log('[action] fold'); send({ type: 'action', action: 'fold' }); });
 document.getElementById('btn-check').addEventListener('click', () => { console.log('[action] check'); send({ type: 'action', action: 'check' }); });
 document.getElementById('btn-call').addEventListener('click',  () => { console.log('[action] call'); send({ type: 'action', action: 'call' }); });
 document.getElementById('btn-raise').addEventListener('click', () => {
   const amount = parseInt(document.getElementById('raise-amount').value);
   if (!isNaN(amount)) { console.log(`[action] raise $${amount}`); send({ type: 'action', action: 'raise', amount }); }
+});
+
+document.getElementById('raise-quick-btns').addEventListener('click', e => {
+  const btn = e.target.closest('[data-raise-action]');
+  if (!btn) return;
+  const action   = btn.dataset.raiseAction;
+  const input    = document.getElementById('raise-amount');
+  const bb       = state.gameState?.bb ?? 50;
+  const me       = (state.gameState?.players ?? []).find(p => p.token === state.myToken);
+  const minRaise = (state.gameState?.currentBet ?? 0) + (state.gameState?.minRaise ?? state.gameState?.currentBet ?? 50);
+  const maxRaise = (me?.chips ?? 0) + (me?.bet ?? 0);
+  let   val      = parseInt(input.value) || minRaise;
+  if (action === 'allin') {
+    val = maxRaise;
+  } else if (action === '+1bb') {
+    val += bb;
+  } else if (action === '-1bb') {
+    val -= bb;
+  } else if (action === '+10bb') {
+    val += bb * 10;
+  } else if (action === '-10bb') {
+    val -= bb * 10;
+  }
+  input.value = Math.max(minRaise, Math.min(maxRaise, val));
 });

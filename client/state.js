@@ -6,6 +6,7 @@ export const state = {
   lobbySettings:  { bb: 50, startingChips: 1000, startingJokers: 3, jokersPerRound: 1, maxJokers: 3, maxJokersPerRound: 3, blindDoubleRounds: 4 },
   isReady:        false,
   gameOverShowing: false,
+  lastKnownPlayers: [],
   gameState:      null,
   myHole:         [],
   myJokers:       [],
@@ -14,6 +15,7 @@ export const state = {
   pendingJoker:   null,
   jokerPlaying:   null,
   commitTimerTotal: 15000,
-  showdownFeedAdded: false,
+  showdownFeedAdded:   false,
+  showdownRendered:    false,
   revealedOpponents: [],  // [{ token, name, cards }] from tell joker
 };

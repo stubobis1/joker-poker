@@ -120,6 +120,30 @@ function showTargetSelector() {
   document.body.appendChild(overlay);
 }
 
+export function showJokerTargetPicker(msg) {
+  const overlay = document.createElement('div');
+  overlay.className = 'target-overlay';
+  overlay.innerHTML = `<h3>Robin Hood: choose target</h3>`;
+
+  (msg.choices ?? []).forEach(opp => {
+    const btn = document.createElement('button');
+    btn.className   = 'target-btn';
+    btn.textContent = `${opp.name}  ($${opp.chips})`;
+    btn.addEventListener('click', () => {
+      document.body.removeChild(overlay);
+      send({ type: 'play_joker', joker_id: msg.joker_id, target: opp.token });
+    });
+    overlay.appendChild(btn);
+  });
+
+  const cancel = document.createElement('button');
+  cancel.className   = 'target-cancel';
+  cancel.textContent = 'Cancel';
+  cancel.addEventListener('click', () => document.body.removeChild(overlay));
+  overlay.appendChild(cancel);
+  document.body.appendChild(overlay);
+}
+
 export const buildRevealHtml = msg => {
   switch (msg.type) {
     case 'oracle':
@@ -137,12 +161,63 @@ export const buildRevealHtml = msg => {
   }
 };
 
+function buildPrivateSummary(msg) {
+  switch (msg.type) {
+    case 'oracle':      return `Oracle: next card ${msg.cards.map(formatCard).join(', ') || '?'}`;
+    case 'second_look': return `Second Look: ${(msg.cards ?? []).map(formatCard).join(', ')}`;
+    case 'tell':        return `Tell: ${msg.targetName} has ${(msg.cards ?? []).map(formatCard).join(' ')}`;
+    case 'x_ray':       return `X-Ray: ${(msg.opponents ?? []).map(o => `${o.name} ${o.cards.map(formatCard).join(' ')}`).join(' | ')}`;
+    case 'bloodhound':  return `Bloodhound: ${msg.leaderName} leads (${msg.handName})`;
+    default:            return msg.type;
+  }
+}
+
+function addPrivateFeedEntry(msg) {
+  const feed = document.getElementById('joker-feed');
+  const list = document.getElementById('joker-feed-list');
+  if (!feed || !list) return;
+  feed.classList.remove('hidden');
+  const entry = document.createElement('div');
+  entry.className = 'joker-feed-entry private-feed-entry';
+  entry.innerHTML = `<span class="jfe-private-label">You saw:</span> <span class="jfe-effect">${buildPrivateSummary(msg)}</span>`;
+  list.appendChild(entry);
+}
+
+function revealTitle(msg) {
+  const names = { oracle: 'Oracle', second_look: 'Second Look', tell: 'Tell', x_ray: 'X-Ray', bloodhound: 'Bloodhound' };
+  return `Private Info — ${names[msg.type] ?? msg.type}`;
+}
+
 export function showJokerReveal(msg) {
-  const popup = document.createElement('div');
-  popup.className = 'reveal-popup';
-  popup.innerHTML = buildRevealHtml(msg);
-  document.body.appendChild(popup);
-  setTimeout(() => popup.remove(), 6000);
+  addPrivateFeedEntry(msg);
+
+  const overlay = document.createElement('div');
+  overlay.className = 'reveal-modal-overlay';
+
+  const box = document.createElement('div');
+  box.className = 'reveal-modal';
+
+  const titleBar = document.createElement('div');
+  titleBar.className = 'reveal-modal-title';
+  titleBar.textContent = revealTitle(msg);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'reveal-modal-close';
+  closeBtn.textContent = '✕';
+  titleBar.appendChild(closeBtn);
+
+  const body = document.createElement('div');
+  body.className = 'reveal-modal-body';
+  body.innerHTML = buildRevealHtml(msg);
+
+  box.appendChild(titleBar);
+  box.appendChild(body);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  closeBtn.addEventListener('click', close);
+  overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
 }
 
 export function addJokerFeedEntry(msg) {
@@ -153,7 +228,7 @@ export function addJokerFeedEntry(msg) {
   const name = msg.jokerName ?? msg.jokerId.replace(/_/g, ' ');
   const entry = document.createElement('div');
   entry.className = 'joker-feed-entry';
-  entry.innerHTML = `<span class="jfe-player">${msg.playerName}</span> <span class="jfe-name">${name}</span>${msg.jokerDesc ? `<div class="jfe-desc">${msg.jokerDesc}</div>` : ''}`;
+  entry.innerHTML = `<span class="jfe-player">${msg.playerName}</span> <span class="jfe-name">${name}</span>${msg.jokerDesc ? `<div class="jfe-desc">${msg.jokerDesc}</div>` : ''}${msg.effectSummary ? `<div class="jfe-effect">${msg.effectSummary}</div>` : ''}`;
   list.appendChild(entry);
 }
 

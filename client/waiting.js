@@ -1,8 +1,10 @@
 import { state } from './state.js';
 import { showScreen } from './ui.js';
-import { send } from './ws.js';
+import { send, leaveGame } from './ws.js';
 
 let settingsDebounce = null;
+
+document.getElementById('btn-leave').addEventListener('click', () => leaveGame());
 
 document.getElementById('btn-ready').addEventListener('click', () => {
   state.isReady = !state.isReady;

@@ -3,8 +3,9 @@ const SUIT_NAME = { h: 'hearts', d: 'diamonds', c: 'clubs', s: 'spades' };
 
 export const isRed = card => card.slice(-1) === 'h' || card.slice(-1) === 'd';
 
-export const formatCard = card => {
+export const formatCard = (card, isWild = false) => {
   if (!card || card.length < 2) return card;
+  if (isWild) return '?☺';
   const rank = card.slice(0, -1);
   const suit = card.slice(-1);
   return (rank === 'T' ? '10' : rank) + (SUIT_SYMBOL[suit] ?? suit);
@@ -27,10 +28,10 @@ export function makeCard(card, isWild = false) {
   const suit   = card.slice(-1);
   const rankEl = document.createElement('div');
   rankEl.className   = 'rank';
-  rankEl.textContent = rank === 'T' ? '10' : rank;
+  rankEl.textContent = isWild ? '?' : (rank === 'T' ? '10' : rank);
 
   el.appendChild(rankEl);
-  el.appendChild(makeSuitImg(suit, isWild));
+  el.appendChild(isWild ? (() => { const s = document.createElement('span'); s.className = 'suit-img wild-sym'; s.textContent = '☺'; return s; })() : makeSuitImg(suit, false));
   return el;
 }
 
@@ -43,9 +44,9 @@ export function makeSmCard(card, isWild = false) {
   const suit   = card.slice(-1);
   const rankEl = document.createElement('span');
   rankEl.className   = 'rank';
-  rankEl.textContent = rank === 'T' ? '10' : rank;
+  rankEl.textContent = isWild ? '?' : (rank === 'T' ? '10' : rank);
 
   el.appendChild(rankEl);
-  el.appendChild(makeSuitImg(suit, isWild));
+  el.appendChild(isWild ? (() => { const s = document.createElement('span'); s.className = 'suit-img wild-sym'; s.textContent = '☺'; return s; })() : makeSuitImg(suit, false));
   return el;
 }

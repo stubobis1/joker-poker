@@ -100,6 +100,7 @@
       <ul id="player-list"></ul>
 
       <div class="waiting-actions">
+        <button id="btn-leave" class="btn-secondary">&#8592; Leave</button>
         <button id="btn-ready" class="btn-secondary">Ready</button>
         <button id="btn-start" class="btn-primary hidden">Start Game</button>
       </div>
@@ -114,7 +115,10 @@
       <p class="status-text">Select which jokers to arm for this hand. Opponents see the count, not the type.<br>Armed jokers are spent whether played or not.</p>
       <div id="commit-joker-list" class="joker-list"></div>
       <button id="btn-commit" class="btn-primary">Commit (<span id="commit-count">0</span> armed)</button>
-      <div id="commit-timer-bar" class="timer-bar"><div id="commit-timer-fill" class="timer-fill"></div></div>
+      <div id="commit-timer-row" class="commit-timer-row hidden">
+        <div id="commit-timer-bar" class="timer-bar"><div id="commit-timer-fill" class="timer-fill"></div></div>
+        <span id="commit-timer-text" class="commit-timer-text"></span>
+      </div>
       <div id="commit-players" class="commit-players"></div>
       <p id="commit-waiting" class="status-text hidden"></p>
     </div>
@@ -130,14 +134,18 @@
 
     <div class="table-wrap">
 
+      <div class="table-content">
+
       <!-- Opponents (top) -->
       <div id="opponents" class="opponents-row"></div>
 
       <!-- Community cards + pot -->
       <div class="community-area">
         <div id="pot-display" class="pot-display"></div>
+        <div id="player-bets-display" class="player-bets-display hidden"></div>
         <div id="community-cards" class="card-row"></div>
         <div id="phase-label" class="phase-label"></div>
+        <div id="bb-display" class="bb-display hidden"></div>
         <div id="blind-double-counter" class="blind-double-counter hidden"></div>
         <div id="deck-counter" class="deck-counter hidden"></div>
       </div>
@@ -160,6 +168,8 @@
         </div>
       </div>
 
+      </div>
+
       <!-- Action controls -->
       <div id="action-area" class="action-area hidden">
         <div id="player-chip-label" class="player-chip-label"></div>
@@ -167,6 +177,7 @@
           <span id="action-bet-to-call"></span>
         </div>
         <div id="action-status" class="action-status hidden"></div>
+        <button id="btn-show-cards" class="btn-secondary btn-show-cards hidden">Show Cards</button>
         <div class="action-buttons">
           <button id="btn-fold"  class="btn-action btn-fold">Fold</button>
           <div class="check-call-slot">
@@ -174,6 +185,13 @@
             <button id="btn-call"  class="btn-action btn-call">Call</button>
           </div>
           <div class="raise-row">
+            <div id="raise-quick-btns" class="raise-quick-btns hidden">
+              <button class="btn-raise-quick" data-raise-action="allin">All In</button>
+              <button class="btn-raise-quick" data-raise-action="+10bb" id="btn-raise-p10bb"></button>
+              <button class="btn-raise-quick" data-raise-action="+1bb"  id="btn-raise-p1bb"></button>
+              <button class="btn-raise-quick" data-raise-action="-1bb"  id="btn-raise-m1bb"></button>
+              <button class="btn-raise-quick" data-raise-action="-10bb" id="btn-raise-m10bb"></button>
+            </div>
             <input id="raise-amount" type="number" min="0" step="1" placeholder="Amount" />
             <button id="btn-raise" class="btn-action btn-raise">Raise</button>
           </div>

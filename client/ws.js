@@ -4,7 +4,7 @@ import { showScreen, showError } from './ui.js';
 import { renderWaitingRoom } from './waiting.js';
 import { renderGame, renderMyCards, renderGameOver } from './game.js';
 import { renderCommitScreen } from './commit.js';
-import { renderJokerHand, renderArmedJokers, showJokerReveal, addJokerFeedEntry, clearJokerFeed, showJokerError } from './jokers.js';
+import { renderJokerHand, renderArmedJokers, showJokerReveal, addJokerFeedEntry, clearJokerFeed, showJokerError, showJokerTargetPicker } from './jokers.js';
 
 function randomHex(len) {
   return Array.from(crypto.getRandomValues(new Uint8Array(len)))
@@ -21,8 +21,14 @@ export const send = obj => {
 };
 
 export function connectWS(code, name) {
+  const isReconnect = !!state.lobbyCode; // already in a session = reconnecting after WS drop
   state.lobbyCode = code;
-  if (!state.myToken) {
+  if (!isReconnect) {
+    // Explicit join from lobby screen — always fresh token so duplicate tabs get separate identity
+    const shortId = randomHex(8);
+    state.myToken = `${name.replace(/[^a-zA-Z0-9]/g, '_')}-${shortId}`;
+    sessionStorage.setItem('playerToken', state.myToken);
+  } else if (!state.myToken) {
     const shortId = randomHex(8);
     state.myToken = `${name.replace(/[^a-zA-Z0-9]/g, '_')}-${shortId}`;
     sessionStorage.setItem('playerToken', state.myToken);
@@ -64,6 +70,14 @@ export function connectWS(code, name) {
   ws.addEventListener('error', () => ws.close());
 }
 
+export function leaveGame() {
+  send({ type: 'leave' });
+  state.lobbyCode = null;
+  state.isReady = false;
+  ws?.close();
+  showScreen('screen-lobby');
+}
+
 export function handleMessage(msg) {
   switch (msg.type) {
     case 'your_token':
@@ -74,12 +88,13 @@ export function handleMessage(msg) {
     case 'lobby_state':
       state.lobbyHostToken = msg.hostToken ?? null;
       if (msg.settings) state.lobbySettings = msg.settings;
+      if (msg.players) state.lastKnownPlayers = msg.players;
       if (!state.gameOverShowing) renderWaitingRoom(msg);
       break;
 
     case 'you_are_host':
       state.lobbyHostToken = state.myToken;
-      renderWaitingRoom({ players: [], hostToken: state.myToken, settings: state.lobbySettings, started: false });
+      renderWaitingRoom({ players: state.lastKnownPlayers ?? [], hostToken: state.myToken, settings: state.lobbySettings, started: false });
       break;
 
     case 'kicked':
@@ -92,7 +107,11 @@ export function handleMessage(msg) {
     case 'game_state': {
       const prevPhase = state.gameState?.phase;
       state.gameState = msg.state;
-      if (state.gameState.phase === 'committing' && prevPhase !== 'committing') clearJokerFeed();
+      if (state.gameState.phase === 'committing' && prevPhase !== 'committing') {
+        clearJokerFeed();
+        state.showdownFeedAdded = false;
+        state.showdownRendered  = false;
+      }
       if (state.gameState.phase === 'committing') renderCommitScreen(prevPhase !== 'committing');
       else renderGame();
       break;
@@ -123,6 +142,10 @@ export function handleMessage(msg) {
 
     case 'game_over':
       renderGameOver(msg);
+      break;
+
+    case 'joker_needs_target':
+      showJokerTargetPicker(msg);
       break;
 
     case 'error':

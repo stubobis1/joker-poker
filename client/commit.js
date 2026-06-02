@@ -3,14 +3,25 @@ import { showScreen } from './ui.js';
 import { send } from './ws.js';
 import { makeJokerCard } from './jokers.js';
 
+let countdownStarted = false;
+
 export function renderCommitScreen(isFirstEntry = false) {
   showScreen('screen-commit');
 
   if (isFirstEntry) {
+    countdownStarted = false;
     state.selectedToArm.clear();
-    state.commitTimerTotal = Math.max(1000, (state.gameState?.commitDeadline ?? Date.now()) - Date.now());
     document.getElementById('commit-waiting').classList.add('hidden');
+    document.getElementById('commit-timer-row').classList.add('hidden');
     document.getElementById('commit-timer-fill').style.width = '100%';
+    document.getElementById('commit-timer-text').textContent = '';
+    document.getElementById('btn-commit').disabled = false;
+  }
+
+  if (!countdownStarted && state.gameState?.commitDeadline) {
+    countdownStarted = true;
+    state.commitTimerTotal = Math.max(1000, state.gameState.commitDeadline - Date.now());
+    document.getElementById('commit-timer-row').classList.remove('hidden');
     startCommitCountdown();
   }
 
@@ -77,12 +88,14 @@ function autoCommit() {
 }
 
 function startCommitCountdown() {
-  const fill  = document.getElementById('commit-timer-fill');
-  const total = state.commitTimerTotal;
-  const tick  = () => {
+  const fill     = document.getElementById('commit-timer-fill');
+  const textEl   = document.getElementById('commit-timer-text');
+  const total    = state.commitTimerTotal;
+  const tick     = () => {
     const deadline  = state.gameState?.commitDeadline;
     const remaining = deadline ? Math.max(0, deadline - Date.now()) : 0;
     fill.style.width = `${(remaining / total) * 100}%`;
+    textEl.textContent = `${Math.ceil(remaining / 1000)}s`;
     if (remaining <= 0) { autoCommit(); return; }
     if (state.gameState?.phase === 'committing') requestAnimationFrame(tick);
   };
