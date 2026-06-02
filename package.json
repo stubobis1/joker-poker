@@ -1,1 +1,9 @@
-{"name":"joker-poker","type":"module","scripts":{"serve":"node serve.js"}}
+{
+  "name": "joker-poker",
+  "type": "module",
+  "scripts": {
+    "dev": "node dev.js",
+    "serve": "node serve.js"
+  }
+}
+
