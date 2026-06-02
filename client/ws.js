@@ -133,7 +133,7 @@ export function handleMessage(msg) {
       break;
 
     case 'joker_reveal':
-      showJokerReveal(msg);
+      showJokerReveal(msg.reveal ?? msg);
       break;
 
     case 'joker_private':
