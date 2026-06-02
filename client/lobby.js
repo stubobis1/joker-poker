@@ -20,6 +20,7 @@ serverInput.value = localStorage.getItem('serverUrl') || '';
 btnSaveServer.addEventListener('click', () => {
   let val = serverInput.value.trim().replace(/\/$/, '');
   if (val && !/^wss?:\/\//i.test(val)) val = 'ws://' + val;
+  if (val && !/:\d+$/.test(val.replace(/^wss?:\/\//, ''))) val = val + ':3777';
   if (val) {
     serverInput.value = val;
     localStorage.setItem('serverUrl', val);
@@ -29,13 +30,17 @@ btnSaveServer.addEventListener('click', () => {
   pingServer(val || 'ws://localhost:3777');
 });
 
-function pingServer(wsBase) {
-  serverSaveMsg.textContent = 'Checking...';
+function pingServer(wsBase, attempt = 1, maxAttempts = 5) {
+  serverSaveMsg.textContent = `Checking... (${attempt}/${maxAttempts})`;
   serverSaveMsg.className = 'server-save-msg';
   const timeout = setTimeout(() => {
     ws.close();
-    serverSaveMsg.textContent = 'No response (timeout)';
-    serverSaveMsg.className = 'server-save-msg server-save-msg--error';
+    if (attempt < maxAttempts) {
+      pingServer(wsBase, attempt + 1, maxAttempts);
+    } else {
+      serverSaveMsg.textContent = 'No response (timeout)';
+      serverSaveMsg.className = 'server-save-msg server-save-msg--error';
+    }
   }, 4000);
   const ws = new WebSocket(`${wsBase}/ping`);
   ws.addEventListener('message', e => {
@@ -50,8 +55,12 @@ function pingServer(wsBase) {
   });
   ws.addEventListener('error', () => {
     clearTimeout(timeout);
-    serverSaveMsg.textContent = 'Could not connect';
-    serverSaveMsg.className = 'server-save-msg server-save-msg--error';
+    if (attempt < maxAttempts) {
+      pingServer(wsBase, attempt + 1, maxAttempts);
+    } else {
+      serverSaveMsg.textContent = 'Could not connect';
+      serverSaveMsg.className = 'server-save-msg server-save-msg--error';
+    }
   });
 }
 
