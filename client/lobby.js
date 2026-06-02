@@ -17,19 +17,27 @@ document.getElementById('input-code').addEventListener('input', e => {
 const serverInput   = document.getElementById('input-server-url');
 const btnSaveServer = document.getElementById('btn-save-server');
 const serverSaveMsg = document.getElementById('server-save-msg');
-serverInput.value = localStorage.getItem('serverUrl') || '';
+const defaultProto = location.protocol === 'https:' ? 'wss' : 'ws';
+const defaultServer = `${defaultProto}://localhost:3777`;
+
+function upgradeProto(url) {
+  return location.protocol === 'https:' ? url.replace(/^ws:\/\//i, 'wss://') : url;
+}
+
+serverInput.value = upgradeProto(localStorage.getItem('serverUrl') || '');
 btnSaveServer.addEventListener('click', () => {
   let val = serverInput.value.trim().replace(/\/$/, '');
-  if (val && !/^wss?:\/\//i.test(val)) val = (location.protocol === 'https:' ? 'wss' : 'ws') + '://' + val;
+  if (val && !/^wss?:\/\//i.test(val)) val = defaultProto + '://' + val;
   if (val && !/:\d+$/.test(val.replace(/^wss?:\/\//, ''))) val = val + ':3777';
+  val = upgradeProto(val);
   if (val) {
     serverInput.value = val;
     localStorage.setItem('serverUrl', val);
   } else {
     localStorage.removeItem('serverUrl');
   }
-  console.log(`joker-poker ${COMMIT_HASH} — connecting to ${val || 'ws://localhost:3777'}`);
-  pingServer(val || 'ws://localhost:3777');
+  console.log(`joker-poker ${COMMIT_HASH} — connecting to ${val || defaultServer}`);
+  pingServer(val || defaultServer);
 });
 
 function pingServer(wsBase, attempt = 1, maxAttempts = 5) {
