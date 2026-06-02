@@ -991,6 +991,33 @@ input[type="checkbox"] {
 
 .joker-card:active { box-shadow: inset 1px 1px 2px rgba(0,0,0,0.2); }
 
+.commit-new-section {
+  width: 100%;
+  border: 1px solid #aa8800;
+  border-radius: 4px;
+  background: rgba(255, 220, 0, 0.08);
+  padding: 8px 10px;
+}
+
+.commit-new-label {
+  font-size: 11px;
+  font-weight: bold;
+  color: #ffdd44;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.commit-new-list {
+  margin: 0;
+}
+
+.joker-card.joker-new {
+  border-color: #cc9900;
+  box-shadow: 0 0 4px rgba(255, 200, 0, 0.5);
+}
+
 .joker-card.selected {
   background: #D8E8FF;
   border-color: var(--xp-border-dk);

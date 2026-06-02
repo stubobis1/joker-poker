@@ -31,11 +31,23 @@ export function renderCommitScreen(isFirstEntry = false) {
   const maxArm = state.gameState?.jokerSettings?.maxJokersPerRound ?? Infinity;
   console.log(`[commit] renderCommitScreen: ${state.myJokers.length} jokers, maxArm=${maxArm}, isFirstEntry=${isFirstEntry}`);
 
+  const newSection = document.getElementById('commit-new-section');
+  const newList    = document.getElementById('commit-new-list');
+  const newJokers  = state.myJokers.filter(j => j.new);
+  newList.innerHTML = '';
+  if (newJokers.length) {
+    newSection.classList.remove('hidden');
+    newJokers.forEach(j => newList.appendChild(makeJokerCard(j, false)));
+  } else {
+    newSection.classList.add('hidden');
+  }
+
   const list = document.getElementById('commit-joker-list');
   list.innerHTML = '';
 
   state.myJokers.forEach(j => {
     const card = makeJokerCard(j, false);
+    if (j.new) card.classList.add('joker-new');
     if (state.selectedToArm.has(j.id)) card.classList.add('selected');
     card.addEventListener('click', () => {
       if (state.selectedToArm.has(j.id)) {
