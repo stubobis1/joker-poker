@@ -402,6 +402,11 @@ input[type="checkbox"] {
 .opponent-chips { color: #006600; font-size: 10px; font-weight: bold; }
 .opponent-bet   { color: #CC0000; font-size: 10px; min-height: 1em; }
 
+.opponent-joker-row { display: flex; gap: 4px; margin-top: 2px; }
+.opp-joker-badge    { font-size: 9px; padding: 1px 4px; border-radius: 3px; cursor: default; }
+.opp-joker-armed    { background: #4a3a00; color: #FFD700; border: 1px solid #8a6a00; }
+.opp-joker-reserved { background: #1a2a3a; color: #90b8e0; border: 1px solid #3a5a7a; }
+
 .opponent-cards {
   display: flex;
   gap: 2px;
@@ -459,6 +464,14 @@ input[type="checkbox"] {
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.phase-current {
+  color: #ffffff;
+  background: #3a6b3a;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-style: normal;
 }
 
 .bb-display {
@@ -685,6 +698,11 @@ input[type="checkbox"] {
   background: #FFFBCC;
   border-color: #CC8800;
   font-weight: bold;
+}
+.sd-player-row.sd-loser {
+  background: rgba(0,0,0,0.08);
+  border-color: #aaa;
+  opacity: 0.85;
 }
 .sd-player-name {
   min-width: 60px;

@@ -20,8 +20,22 @@ export function renderGame() {
 const renderPot = () => {
   const gs  = state.gameState;
   const pot = gs.pot ?? 0;
-  document.getElementById('pot-display').textContent = pot > 0 ? `Pot: $${pot}` : '';
-  document.getElementById('phase-label').textContent = gs.phase ?? '';
+  const potEl = document.getElementById('pot-display');
+  const pots  = gs.pots ?? [];
+  if (pots.length > 1) {
+    const main = pots[0].amount;
+    const sides = pots.slice(1).map((p, i) => `Side Pot ${i + 1}: $${p.amount}`).join('  ');
+    potEl.textContent = `Pot: $${main}  ${sides}`;
+  } else {
+    potEl.textContent = pot > 0 ? `Pot: $${pot}` : '';
+  }
+
+  const PHASES = ['preflop', 'flop', 'turn', 'river', 'showdown'];
+  const cur    = gs.phase ?? '';
+  const phaseEl = document.getElementById('phase-label');
+  phaseEl.innerHTML = PHASES
+    .map(p => p === cur ? `<strong class="phase-current">${p}</strong>` : p)
+    .join(' – ');
 
   const bbEl = document.getElementById('bb-display');
   if (gs.phase !== 'waiting') {
@@ -127,6 +141,26 @@ function makeOpponentSeat(p) {
     seat.appendChild(ai);
   }
 
+  if (p.commitCount > 0 || p.jokerCount > 0) {
+    const jokerRow = document.createElement('div');
+    jokerRow.className = 'opponent-joker-row';
+    if (p.commitCount > 0) {
+      const armed = document.createElement('span');
+      armed.className   = 'opp-joker-badge opp-joker-armed';
+      armed.textContent = `⚡ ${p.commitCount}`;
+      armed.title       = `${p.commitCount} armed joker${p.commitCount !== 1 ? 's' : ''}`;
+      jokerRow.appendChild(armed);
+    }
+    if (p.jokerCount > 0) {
+      const reserved = document.createElement('span');
+      reserved.className   = 'opp-joker-badge opp-joker-reserved';
+      reserved.textContent = `🃏 ${p.jokerCount}`;
+      reserved.title       = `${p.jokerCount} joker${p.jokerCount !== 1 ? 's' : ''} in hand`;
+      jokerRow.appendChild(reserved);
+    }
+    seat.appendChild(jokerRow);
+  }
+
   const cardRow    = document.createElement('div');
   cardRow.className = 'opponent-cards';
   const wilds      = new Set(state.gameState.wilds ?? []);
@@ -226,15 +260,16 @@ function renderActionArea() {
   status.classList.add('hidden');
   buttons.classList.remove('invisible');
 
-  const toCall    = Math.max(0, (state.gameState.currentBet ?? 0) - (me.bet ?? 0));
+  const rawToCall    = Math.max(0, (state.gameState.currentBet ?? 0) - (me.bet ?? 0));
   const hasFreeCheck = (state.gameState.activeEffects?.halfTime ?? []).includes(state.myToken);
+  const toCall    = hasFreeCheck ? 0 : rawToCall;
   const canCheck  = toCall === 0;
 
   document.getElementById('btn-check').style.display = canCheck ? '' : 'none';
   document.getElementById('btn-call').style.display  = canCheck ? 'none' : '';
-  document.getElementById('btn-call').textContent    = hasFreeCheck ? 'Check (free)' : `Call $${toCall}`;
+  document.getElementById('btn-call').textContent    = `Call $${toCall}`;
   document.getElementById('action-bet-to-call').textContent = canCheck
-    ? ''
+    ? (hasFreeCheck && rawToCall > 0 ? `Free Check active (normally call $${rawToCall})` : '')
     : `Current bet: $${state.gameState.currentBet}  (call $${toCall})`;
 
   const minRaise   = (state.gameState.currentBet ?? 0) + (state.gameState.minRaise ?? state.gameState.currentBet ?? 50);
@@ -289,17 +324,17 @@ function renderShowdown() {
   const handsEl = document.createElement('div');
   handsEl.className = 'sd-hands';
 
-  const active = players.filter(p => !p.folded && !p.sittingOut &&
-    (p.holeCards?.length > 0 || showdownHands[p.token]));
+  const active = players.filter(p => !p.folded && !p.sittingOut);
   for (const p of active) {
     const hand      = showdownHands[p.token];
     const isWinner  = winnerTokens.has(p.token);
-    const award     = awards.find(a => a.tokens.includes(p.token) &&
+    const winAwards = awards.filter(a => a.tokens.includes(p.token) &&
       a.handName !== 'Tax Man' && a.handName !== 'Insurance');
+    const totalWon  = winAwards.reduce((s, a) => s + a.amount, 0);
     const bestCards = hand?.cards ?? p.holeCards ?? [];
 
     const row = document.createElement('div');
-    row.className = 'sd-player-row' + (isWinner ? ' sd-winner' : '');
+    row.className = 'sd-player-row' + (isWinner ? ' sd-winner' : ' sd-loser');
 
     const nameEl = document.createElement('span');
     nameEl.className   = 'sd-player-name';
@@ -308,8 +343,8 @@ function renderShowdown() {
 
     const descEl = document.createElement('span');
     descEl.className   = 'sd-hand-desc';
-    const prefix       = isWinner ? `won $${award?.amount ?? '?'} with` : 'had';
-    descEl.textContent = `${prefix} ${hand?.name ?? '?'}:`;
+    const prefix       = isWinner ? `won $${totalWon} with` : 'lost with';
+    descEl.textContent = hand?.name ? `${prefix} ${hand.name}:` : prefix;
     row.appendChild(descEl);
 
     const cardsEl = document.createElement('span');

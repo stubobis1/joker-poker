@@ -62,6 +62,16 @@ export function renderArmedJokers() {
 
 function onPlayJokerClick(joker, card) {
   if (joker.target === 'opponent') {
+    const validTargets = (state.gameState?.players ?? []).filter(
+      p => p.token !== state.myToken && !p.folded && !p.sittingOut &&
+        (joker.id !== 'joker_thief' || p.jokerCount > 0)
+    );
+    if (!validTargets.length) {
+      showJokerError(joker.id === 'joker_thief'
+        ? 'No opponents have jokers to steal.'
+        : 'No valid targets.');
+      return;
+    }
     state.pendingJoker = joker;
     showTargetSelector();
   } else {

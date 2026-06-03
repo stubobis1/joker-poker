@@ -80,6 +80,22 @@ function pingServer(wsBase, attempt = 1, maxAttempts = 5) {
   });
 }
 
+const CODE_RE = /^[A-Z0-9]{4,8}$/;
+
+async function createLobby(errEl, code = null) {
+  const body = code ? JSON.stringify({ code }) : undefined;
+  const r = await fetch(`${SERVER_HTTP}/lobby`, {
+    method: 'POST',
+    headers: code ? { 'Content-Type': 'application/json' } : {},
+    body,
+  });
+  if (!r.ok) {
+    const data = await r.json().catch(() => ({}));
+    showError(errEl, data.error ?? 'Server error'); return null;
+  }
+  return (await r.json()).code;
+}
+
 async function onJoinClick() {
   const name  = document.getElementById('input-name').value.trim();
   const code  = document.getElementById('input-code').value.trim().toUpperCase();
@@ -92,13 +108,22 @@ async function onJoinClick() {
   let targetCode = code;
 
   if (!targetCode) {
+    try { targetCode = await createLobby(errEl); } catch { showError(errEl, 'Could not reach server.'); return; }
+    if (!targetCode) return;
+  } else {
+    if (!CODE_RE.test(code)) { showError(errEl, 'Lobby codes are 4–8 letters/numbers.'); return; }
+
+    // Check if lobby exists
+    let exists = false;
     try {
-      const r = await fetch(`${SERVER_HTTP}/lobby`, { method: 'POST' });
-      if (!r.ok) throw new Error('Server error');
-      const data = await r.json();
-      targetCode = data.code;
-    } catch {
-      showError(errEl, 'Could not reach server.'); return;
+      const r = await fetch(`${SERVER_HTTP}/lobby/${code}`);
+      exists = r.ok;
+    } catch { showError(errEl, 'Could not reach server.'); return; }
+
+    if (!exists) {
+      if (!confirm(`No lobby found with code "${code}".\nCreate a new lobby with this code?`)) return;
+      try { targetCode = await createLobby(errEl, code); } catch { showError(errEl, 'Could not reach server.'); return; }
+      if (!targetCode) return;
     }
   }
 

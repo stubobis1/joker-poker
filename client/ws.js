@@ -3,7 +3,7 @@ import { state } from './state.js';
 import { showScreen, showError } from './ui.js';
 import { renderWaitingRoom } from './waiting.js';
 import { renderGame, renderMyCards, renderGameOver } from './game.js';
-import { renderCommitScreen } from './commit.js';
+import { renderCommitScreen, autoCommit } from './commit.js';
 import { renderJokerHand, renderArmedJokers, showJokerReveal, addJokerFeedEntry, addPrivateHandFeedEntry, clearJokerFeed, showJokerError, showJokerTargetPicker } from './jokers.js';
 
 function randomHex(len) {
@@ -113,7 +113,10 @@ export function handleMessage(msg) {
         state.showdownRendered  = false;
       }
       if (state.gameState.phase === 'committing') renderCommitScreen(prevPhase !== 'committing');
-      else renderGame();
+      else {
+        if (prevPhase === 'committing') autoCommit();
+        renderGame();
+      }
       break;
     }
 

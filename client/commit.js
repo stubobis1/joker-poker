@@ -85,9 +85,7 @@ function renderPlayerCommitStatus() {
     });
 }
 
-function autoCommit() {
-  const me = state.gameState?.players?.find(p => p.token === state.myToken);
-  if (me?.hasCommitted) return;
+export function autoCommit() {
   const btn = document.getElementById('btn-commit');
   if (btn.disabled) return;
   send({ type: 'commit_jokers', joker_ids: [...state.selectedToArm] });
@@ -108,7 +106,7 @@ function startCommitCountdown() {
     const remaining = deadline ? Math.max(0, deadline - Date.now()) : 0;
     fill.style.width = `${(remaining / total) * 100}%`;
     textEl.textContent = `${Math.ceil(remaining / 1000)}s`;
-    if (remaining <= 0) { autoCommit(); return; }
+    if (remaining <= 500) { autoCommit(); return; }
     if (state.gameState?.phase === 'committing') requestAnimationFrame(tick);
   };
   requestAnimationFrame(tick);
