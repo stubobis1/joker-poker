@@ -87,9 +87,9 @@ describe('buildRevealHtml', () => {
     expect(html).toContain('7♠');
   });
 
-  test('x_ray: shows each opponent and cards', () => {
+  test('xRay: shows each opponent and cards', () => {
     const html = buildRevealHtml({
-      type:      'x_ray',
+      type:      'xRay',
       opponents: [{ name: 'Alice', cards: ['Ah', 'Kd'] }, { name: 'Bob', cards: ['2c', '3s'] }],
     });
     expect(html).toContain('X-Ray');
@@ -106,8 +106,8 @@ describe('buildRevealHtml', () => {
     expect(html).toContain('Flush');
   });
 
-  test('second_look: shows top 3 deck cards', () => {
-    const html = buildRevealHtml({ type: 'second_look', cards: ['Ah', 'Kd', 'Qc'] });
+  test('secondLook: shows top 3 deck cards', () => {
+    const html = buildRevealHtml({ type: 'secondLook', cards: ['Ah', 'Kd', 'Qc'] });
     expect(html).toContain('Second Look');
     expect(html).toContain('A♥');
     expect(html).toContain('K♦');

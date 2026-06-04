@@ -64,10 +64,10 @@ function onPlayJokerClick(joker, card) {
   if (joker.target === 'opponent') {
     const validTargets = (state.gameState?.players ?? []).filter(
       p => p.token !== state.myToken && !p.folded && !p.sittingOut &&
-        (joker.id !== 'joker_thief' || p.jokerCount > 0)
+        (joker.id !== 'jokerThief' || p.jokerCount > 0)
     );
     if (!validTargets.length) {
-      showJokerError(joker.id === 'joker_thief'
+      showJokerError(joker.id === 'jokerThief'
         ? 'No opponents have jokers to steal.'
         : 'No valid targets.');
       return;
@@ -160,11 +160,11 @@ export const buildRevealHtml = msg => {
       return `<strong>Oracle</strong><br>Next card: ${msg.cards.map(formatCard).join(', ') || '?'}`;
     case 'tell':
       return `<strong>Tell</strong><br>${msg.targetName}'s cards: ${(msg.cards ?? []).map(formatCard).join(', ')}`;
-    case 'x_ray':
+    case 'xRay':
       return `<strong>X-Ray</strong><br>${(msg.opponents ?? []).map(o => `${o.name}: ${o.cards.map(formatCard).join(' ')}`).join('<br>')}`;
     case 'bloodhound':
       return `<strong>Bloodhound</strong><br>${msg.leaderName} leads with ${msg.handName}`;
-    case 'second_look':
+    case 'secondLook':
       return `<strong>Second Look</strong><br>Top 3 deck: ${(msg.cards ?? []).map(formatCard).join(', ')}`;
     default:
       return JSON.stringify(msg);
@@ -174,9 +174,9 @@ export const buildRevealHtml = msg => {
 function buildPrivateSummary(msg) {
   switch (msg.type) {
     case 'oracle':      return `Oracle: next card ${msg.cards.map(formatCard).join(', ') || '?'}`;
-    case 'second_look': return `Second Look: ${(msg.cards ?? []).map(formatCard).join(', ')}`;
+    case 'secondLook':  return `Second Look: ${(msg.cards ?? []).map(formatCard).join(', ')}`;
     case 'tell':        return `Tell: ${msg.targetName} has ${(msg.cards ?? []).map(formatCard).join(' ')}`;
-    case 'x_ray':       return `X-Ray: ${(msg.opponents ?? []).map(o => `${o.name} ${o.cards.map(formatCard).join(' ')}`).join(' | ')}`;
+    case 'xRay':        return `X-Ray: ${(msg.opponents ?? []).map(o => `${o.name} ${o.cards.map(formatCard).join(' ')}`).join(' | ')}`;
     case 'bloodhound':  return `Bloodhound: ${msg.leaderName} leads (${msg.handName})`;
     default:            return msg.type;
   }
@@ -194,7 +194,7 @@ function addPrivateFeedEntry(msg) {
 }
 
 function revealTitle(msg) {
-  const names = { oracle: 'Oracle', second_look: 'Second Look', tell: 'Tell', x_ray: 'X-Ray', bloodhound: 'Bloodhound' };
+  const names = { oracle: 'Oracle', secondLook: 'Second Look', tell: 'Tell', xRay: 'X-Ray', bloodhound: 'Bloodhound' };
   return `Private Info — ${names[msg.type] ?? msg.type}`;
 }
 
@@ -235,7 +235,7 @@ export function addJokerFeedEntry(msg) {
   const list = document.getElementById('joker-feed-list');
   if (!feed || !list) return;
   feed.classList.remove('hidden');
-  const name = msg.jokerName ?? msg.jokerId.replace(/_/g, ' ');
+  const name = msg.jokerName ?? msg.jokerId.replace(/([A-Z])/g, ' $1').replace(/^[a-z]/, c => c.toUpperCase());
   const entry = document.createElement('div');
   entry.className = 'joker-feed-entry';
   entry.innerHTML = `<span class="jfe-player">${msg.playerName}</span> <span class="jfe-name">${name}</span>${msg.jokerDesc ? `<div class="jfe-desc">${msg.jokerDesc}</div>` : ''}${msg.effectSummary ? `<div class="jfe-effect">${msg.effectSummary}</div>` : ''}`;
